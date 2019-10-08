@@ -44,7 +44,7 @@ spec:
         runAsUser: 0
       containers:
         - name: ebs-plugin
-          image: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.19.0
+          image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:latest
           imagePullPolicy: IfNotPresent
           args:
             - node
@@ -58,6 +58,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: AWS_REGION
+              value: ru-msk
           envFrom:
           volumeMounts:
             - name: kubelet-dir
