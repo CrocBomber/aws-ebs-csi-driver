@@ -29,9 +29,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	dm "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud/devicemanager"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
 	"github.com/golang/mock/gomock"
-	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

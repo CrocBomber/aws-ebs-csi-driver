@@ -24,7 +24,7 @@ import (
 
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
