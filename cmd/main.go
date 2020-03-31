@@ -21,8 +21,8 @@ import (
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	logsapi "k8s.io/component-base/logs/api/v1"
 	json "k8s.io/component-base/logs/json"
 	"k8s.io/component-base/metrics/legacyregistry"
