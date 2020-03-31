@@ -24,7 +24,7 @@ import (
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 )
 
 func TestGetOptions(t *testing.T) {

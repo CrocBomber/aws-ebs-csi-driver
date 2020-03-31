@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

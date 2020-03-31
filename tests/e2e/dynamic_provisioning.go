@@ -27,11 +27,11 @@ import (
 	restclientset "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/test/e2e/framework"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/testsuites"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/testsuites"
 
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	ebscsidriver "github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"

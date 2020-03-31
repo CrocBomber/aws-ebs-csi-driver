@@ -14,9 +14,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/kubernetes-csi/csi-test/pkg/sanity"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver/internal"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver/internal"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/mount-utils"
 	mount_utils "k8s.io/mount-utils"
 )

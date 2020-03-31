@@ -16,7 +16,7 @@
 # https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope
 # for info on BUILDPLATFORM, TARGETOS, TARGETARCH, etc.
 FROM --platform=$BUILDPLATFORM golang:1.20 AS builder
-WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+WORKDIR /go/src/github.com/c2devel/aws-ebs-csi-driver
 COPY go.* .
 ARG GOPROXY
 RUN go mod download
@@ -27,13 +27,5 @@ ARG VERSION
 RUN OS=$TARGETOS ARCH=$TARGETARCH make $TARGETOS/$TARGETARCH
 
 FROM public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-csi-ebs:latest.2 AS linux-amazon
-COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
+COPY --from=builder /go/src/github.com/c2devel/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]
-
-FROM public.ecr.aws/eks-distro-build-tooling/eks-distro-windows-base:1809 AS windows-ltsc2019
-COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver.exe /aws-ebs-csi-driver.exe
-ENTRYPOINT ["/aws-ebs-csi-driver.exe"]
-
-FROM public.ecr.aws/eks-distro-build-tooling/eks-distro-windows-base:ltsc2022 AS windows-ltsc2022
-COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver.exe /aws-ebs-csi-driver.exe
-ENTRYPOINT ["/aws-ebs-csi-driver.exe"]
