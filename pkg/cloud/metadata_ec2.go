@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,7 +36,7 @@ func EC2MetadataInstanceInfo(svc EC2Metadata, regionFromSession string) (*Metada
 		return nil, fmt.Errorf("could not get valid EC2 instance type")
 	}
 
-	if len(doc.Region) == 0 {
+	if len(doc.Region) == 0 && os.Getenv("AWS_REGION") == "" {
 		if len(regionFromSession) != 0 && util.IsSBE(regionFromSession) {
 			doc.Region = regionFromSession
 		} else {
@@ -49,6 +50,10 @@ func EC2MetadataInstanceInfo(svc EC2Metadata, regionFromSession string) (*Metada
 		} else {
 			return nil, fmt.Errorf("could not get valid EC2 availability zone")
 		}
+	}
+
+	if len(doc.Region) == 0 {
+		doc.Region = os.Getenv("AWS_REGION")
 	}
 
 	enis, err := svc.GetMetadata(enisEndpoint)
