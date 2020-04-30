@@ -59,7 +59,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: AWS_REGION
-              value: ru-msk
+              value: croc
           envFrom:
           volumeMounts:
             - name: kubelet-dir
