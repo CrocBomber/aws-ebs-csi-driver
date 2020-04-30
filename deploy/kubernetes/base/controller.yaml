@@ -79,7 +79,7 @@ spec:
             - name: AWS_EC2_ENDPOINT
               value: https://api.cloud.croc.ru
             - name: AWS_REGION
-              value: ru-msk
+              value: croc
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
