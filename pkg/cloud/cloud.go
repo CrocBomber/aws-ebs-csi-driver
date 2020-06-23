@@ -32,6 +32,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -248,6 +249,179 @@ type cloud struct {
 }
 
 var _ Cloud = &cloud{}
+
+// AttachVolumeRequest generates a "aws/request.Request" representing the
+// client's request for the AttachVolume operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See AttachVolume for more information on using the AttachVolume
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the AttachVolumeRequest method.
+//    req, resp := client.AttachVolumeRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/AttachVolume
+func AttachVolumeRequest(c *ec2.EC2, input *AttachVolumeInput) (req *request.Request, output *ec2.VolumeAttachment) {
+	op := &request.Operation{
+		Name:       "AttachVolume",
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &AttachVolumeInput{}
+	}
+
+	output = &ec2.VolumeAttachment{}
+	req = c.NewRequest(op, input, output)
+	return
+}
+
+// AttachVolume API operation for Amazon Elastic Compute Cloud.
+//
+// Attaches an EBS volume to a running or stopped instance and exposes it to
+// the instance with the specified device name.
+//
+// Encrypted EBS volumes must be attached to instances that support Amazon EBS
+// encryption. For more information, see Amazon EBS Encryption (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
+// After you attach an EBS volume, you must make it available. For more information,
+// see Making an EBS Volume Available For Use (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html).
+//
+// If a volume has an AWS Marketplace product code:
+//
+//    * The volume can be attached only to a stopped instance.
+//
+//    * AWS Marketplace product codes are copied from the volume to the instance.
+//
+//    * You must be subscribed to the product.
+//
+//    * The instance type and operating system of the instance must support
+//    the product. For example, you can't detach a volume from a Windows instance
+//    and attach it to a Linux instance.
+//
+// For more information, see Attaching Amazon EBS Volumes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Elastic Compute Cloud's
+// API operation AttachVolume for usage and error information.
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/AttachVolume
+func AttachVolume(c *ec2.EC2, input *AttachVolumeInput) (*ec2.VolumeAttachment, error) {
+	req, out := AttachVolumeRequest(c, input)
+	return out, req.Send()
+}
+
+// AttachVolumeWithContext is the same as AttachVolume with the addition of
+// the ability to pass a context and additional request options.
+//
+// See AttachVolume for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func AttachVolumeWithContext(c *ec2.EC2, ctx aws.Context, input *AttachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error) {
+	req, out := AttachVolumeRequest(c, input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
+// AttachVolumeInput is a type that Contains the parameters for AttachVolume.
+type AttachVolumeInput struct {
+	_ struct{} `type:"structure"`
+
+	// The device name (for example, /dev/sdh or xvdh).
+	//
+	// Device is a required field
+	Device *string `type:"string"`
+
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have
+	// the required permissions, the error response is DryRunOperation. Otherwise,
+	// it is UnauthorizedOperation.
+	DryRun *bool `locationName:"dryRun" type:"boolean"`
+
+	// The ID of the instance.
+	//
+	// InstanceId is a required field
+	InstanceId *string `type:"string" required:"true"`
+
+	// The ID of the EBS volume. The volume and instance must be within the same
+	// Availability Zone.
+	//
+	// VolumeId is a required field
+	VolumeId *string `type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s AttachVolumeInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s AttachVolumeInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *AttachVolumeInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "AttachVolumeInput"}
+
+	if s.InstanceId == nil {
+		invalidParams.Add(request.NewErrParamRequired("InstanceId"))
+	}
+	if s.VolumeId == nil {
+		invalidParams.Add(request.NewErrParamRequired("VolumeId"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDevice sets the Device field's value.
+func (s *AttachVolumeInput) SetDevice(v string) *AttachVolumeInput {
+	s.Device = &v
+	return s
+}
+
+// SetDryRun sets the DryRun field's value.
+func (s *AttachVolumeInput) SetDryRun(v bool) *AttachVolumeInput {
+	s.DryRun = &v
+	return s
+}
+
+// SetInstanceId sets the InstanceId field's value.
+func (s *AttachVolumeInput) SetInstanceId(v string) *AttachVolumeInput {
+	s.InstanceId = &v
+	return s
+}
+
+// SetVolumeId sets the VolumeId field's value.
+func (s *AttachVolumeInput) SetVolumeId(v string) *AttachVolumeInput {
+	s.VolumeId = &v
+	return s
+}
 
 // NewCloud returns a new instance of AWS cloud
 // It panics if session is invalid
@@ -556,13 +730,12 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 	defer device.Release(false)
 
 	if !device.IsAlreadyAssigned {
-		request := &ec2.AttachVolumeInput{
-			Device:     aws.String("disk2"),
+		request := &AttachVolumeInput{
 			InstanceId: aws.String(nodeID),
 			VolumeId:   aws.String(volumeID),
 		}
 
-		resp, attachErr := c.ec2.AttachVolumeWithContext(ctx, request)
+		resp, attachErr := AttachVolumeWithContext(c.ec2.(*ec2.EC2), ctx, request)
 		if attachErr != nil {
 			var awsErr awserr.Error
 			if errors.As(attachErr, &awsErr) {
