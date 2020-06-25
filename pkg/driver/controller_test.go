@@ -967,14 +967,14 @@ func TestCreateVolume(t *testing.T) {
 			},
 		},
 		{
-			name: "success with volume type sc1",
+			name: "success with volume type st2",
 			testFunc: func(t *testing.T) {
 				req := &csi.CreateVolumeRequest{
 					Name:               "vol-test",
 					CapacityRange:      stdCapRange,
 					VolumeCapabilities: stdVolCap,
 					Parameters: map[string]string{
-						VolumeTypeKey: cloud.VolumeTypeSC1,
+						VolumeTypeKey: cloud.VolumeTypeST2,
 					},
 				}
 
