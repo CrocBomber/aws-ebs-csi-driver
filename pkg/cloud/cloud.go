@@ -761,7 +761,9 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 		// Impossible?
 		return "", fmt.Errorf("unexpected state: attachment nil after attached %q to %q", volumeID, nodeID)
 	}
-	if device.Path != aws.StringValue(attachment.Device) {
+
+	// using VolumeID instead of Device, because Device attribute can be changed
+	if device.VolumeID != aws.StringValue(attachment.VolumeId) {
 		// Already checked in waitForAttachmentState(), but just to be sure...
 		return "", fmt.Errorf("disk attachment of %q to %q failed: requested device %q but found %q", volumeID, nodeID, device.Path, aws.StringValue(attachment.Device))
 	}
@@ -890,7 +892,9 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, expectedSt
 			// For example, we're waiting for a volume to be attached as /dev/xvdba, but AWS can tell us it's
 			// attached as /dev/xvdbb, where it was attached before and it was already detached.
 			// Retry couple of times, hoping AWS starts reporting the right status.
-			device := aws.StringValue(attachment.Device)
+			device := aws.StringValue(attachment.VolumeId)
+			const devPreffix = "/dev/disk/by-id/virtio-"
+			expectedDevice = strings.TrimPrefix(expectedDevice, devPreffix)
 			if expectedDevice != "" && device != "" && device != expectedDevice {
 				klog.InfoS("Expected device for volume not found", "expectedDevice", expectedDevice, "expectedState", expectedState, "volumeID", volumeID, "device", device, "attachmentState", attachmentState)
 				return false, nil
