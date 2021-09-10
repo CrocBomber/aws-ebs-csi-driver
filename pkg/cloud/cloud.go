@@ -799,6 +799,10 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 
 	_, err = c.ec2.DetachVolumeWithContext(ctx, request)
 	if err != nil {
+		if isAWSErrorVolumeIsNotAttached(err) {
+			klog.Warningf("Volume %v was already detached from node %v, ignoring...", volumeID, nodeID)
+			return nil
+		}
 		if isAWSErrorIncorrectState(err) ||
 			isAWSErrorInvalidAttachmentNotFound(err) ||
 			isAWSErrorVolumeNotFound(err) {
@@ -1337,6 +1341,10 @@ func isAWSErrorSnapshotNotFound(err error) bool {
 // This error is reported when the two request contains same client-token but different parameters
 func isAWSErrorIdempotentParameterMismatch(err error) bool {
 	return isAWSError(err, "IdempotentParameterMismatch")
+}
+
+func isAWSErrorVolumeIsNotAttached(err error) bool {
+	return isAWSError(err, "VolumeIsNotAttached")
 }
 
 // ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
