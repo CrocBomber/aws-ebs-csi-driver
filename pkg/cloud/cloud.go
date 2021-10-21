@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -74,9 +74,9 @@ const (
 	io1MaxTotalIOPS             = 64000
 	io1MaxIOPSPerGB             = 50
 	io2MinTotalIOPS             = 100
-	io2MaxTotalIOPS             = 64000
+	io2MaxTotalIOPS             = 50000
 	io2BlockExpressMaxTotalIOPS = 256000
-	io2MaxIOPSPerGB             = 500
+	io2MaxIOPSPerGB             = 50
 	gp3MaxTotalIOPS             = 16000
 	gp3MinTotalIOPS             = 3000
 	gp3MaxIOPSPerGB             = 500
@@ -87,9 +87,6 @@ var (
 	ValidVolumeTypes = []string{
 		VolumeTypeIO2,
 		VolumeTypeGP2,
-		VolumeTypeGP3,
-		VolumeTypeSC1,
-		VolumeTypeST1,
 		VolumeTypeST2,
 	}
 
@@ -126,7 +123,9 @@ const (
 // Defaults
 const (
 	// DefaultVolumeSize represents the default volume size.
-	DefaultVolumeSize int64 = 100 * util.GiB
+	DefaultVolumeSize int64 = 32 * util.GiB
+	// DefaultVolumeType specifies which storage to use for newly created Volumes.
+	DefaultVolumeType = VolumeTypeGP2
 )
 
 // Tags
@@ -459,7 +458,7 @@ func newEC2Cloud(region string, awsSdkDebugLog bool, userAgentExtra string) (Clo
 			Region:                        aws.String(region),
 			CredentialsChainVerboseErrors: aws.Bool(true),
 			// Set MaxRetries to a high value. It will be "ovewritten" if context deadline comes sooner.
-			MaxRetries:                    aws.Int(8),
+			MaxRetries: aws.Int(8),
 		}
 	}
 
