@@ -107,9 +107,9 @@ func TestNewMetadataService(t *testing.T) {
 				AvailabilityZone: stdAvailabilityZone,
 			},
 			isAwsRegionEnvSet: false,
-			getMetadataValue: "foo",
-			imdsENIOutput:    "00:00:00:00:00:00",
-			expectedENIs:     1,
+			getMetadataValue:  "foo",
+			imdsENIOutput:     "00:00:00:00:00:00",
+			expectedENIs:      1,
 		},
 		{
 			name:                 "success: outpost-arn is not found",
@@ -148,7 +148,6 @@ func TestNewMetadataService(t *testing.T) {
 			},
 			expectedENIs:   1,
 			nodeNameEnvVar: nodeName,
-			isAwsRegionEnvSet: false,
 		},
 		{
 			name:                 "failure: metadata not available, k8s client error",
@@ -158,8 +157,8 @@ func TestNewMetadataService(t *testing.T) {
 					return true, nil, fmt.Errorf("client failure")
 				})
 			},
-			expectedErr:    fmt.Errorf("error getting Node %s: client failure", nodeName),
-			nodeNameEnvVar: nodeName,
+			expectedErr:       fmt.Errorf("error getting Node %s: client failure", nodeName),
+			nodeNameEnvVar:    nodeName,
 			isAwsRegionEnvSet: false,
 		},
 
@@ -168,7 +167,7 @@ func TestNewMetadataService(t *testing.T) {
 			ec2metadataAvailable: false,
 			expectedErr:          fmt.Errorf("CSI_NODE_NAME env var not set"),
 			nodeNameEnvVar:       "",
-			isAwsRegionEnvSet: false,
+			isAwsRegionEnvSet:    false,
 		},
 		{
 			name:                 "failure: metadata not available, no provider ID",
@@ -187,7 +186,7 @@ func TestNewMetadataService(t *testing.T) {
 				},
 				Status: v1.NodeStatus{},
 			},
-			nodeNameEnvVar: nodeName,
+			nodeNameEnvVar:    nodeName,
 			isAwsRegionEnvSet: false,
 		},
 		{
@@ -211,7 +210,7 @@ func TestNewMetadataService(t *testing.T) {
 				},
 				Status: v1.NodeStatus{},
 			},
-			nodeNameEnvVar: nodeName,
+			nodeNameEnvVar:    nodeName,
 			isAwsRegionEnvSet: false,
 		},
 		{
@@ -235,7 +234,7 @@ func TestNewMetadataService(t *testing.T) {
 				},
 				Status: v1.NodeStatus{},
 			},
-			nodeNameEnvVar: nodeName,
+			nodeNameEnvVar:    nodeName,
 			isAwsRegionEnvSet: false,
 		},
 		{
@@ -260,7 +259,7 @@ func TestNewMetadataService(t *testing.T) {
 				},
 				Status: v1.NodeStatus{},
 			},
-			nodeNameEnvVar: nodeName,
+			nodeNameEnvVar:    nodeName,
 			isAwsRegionEnvSet: false,
 		},
 		{
@@ -294,7 +293,7 @@ func TestNewMetadataService(t *testing.T) {
 			},
 			invalidInstanceIdentityDocument: true,
 			expectedErr:                     fmt.Errorf("could not get valid EC2 region"),
-			isAwsRegionEnvSet: false,
+			isAwsRegionEnvSet:               false,
 		},
 		{
 			name:                 "fail: GetInstanceIdentityDocument returned empty az",
@@ -307,7 +306,7 @@ func TestNewMetadataService(t *testing.T) {
 			},
 			invalidInstanceIdentityDocument: true,
 			expectedErr:                     fmt.Errorf("could not get valid EC2 availability zone"),
-			isAwsRegionEnvSet: false,
+			isAwsRegionEnvSet:               false,
 		},
 		{
 			name:                 "fail: outpost-arn failed",
@@ -318,10 +317,10 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			imdsENIOutput:    "00:00:00:00:00:00",
-			expectedENIs:     1,
-			getMetadataError: fmt.Errorf("405"),
-			expectedErr:      fmt.Errorf("something went wrong while getting EC2 outpost arn: 405"),
+			imdsENIOutput:     "00:00:00:00:00:00",
+			expectedENIs:      1,
+			getMetadataError:  fmt.Errorf("405"),
+			expectedErr:       fmt.Errorf("something went wrong while getting EC2 outpost arn: 405"),
 			isAwsRegionEnvSet: false,
 		},
 		{
