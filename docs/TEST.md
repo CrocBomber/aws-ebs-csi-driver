@@ -58,6 +58,9 @@ $(go env GOBIN)/ginkgo -p -nodes=32 -v --focus="\[ebs-csi-e2e\] \[single-az\]" t
 
 В директории tests есть e2e/e2e-migration/intergration субдиректории. Основная масса тестов находится в e2e. Тесты в е2е функциональные, в основном работют в api k8s и облака (лучшего облака - ц2 облака).
 
+Для выполнения тестов потребуется:
+- Для single-az 1 нода мастер и 1 воркер
+- Для multi-az 3 ноды мастеров в разных аз и 3 воркера в разных аз
 Как запустить тесты
 Для запуска тестов нам понадобится.
 - [создать](https://docs.cloud.croc.ru/ru/services/kubernetes.html#creating) бубернетес кластер в ц2 кдауде
@@ -86,33 +89,40 @@ $(go env GOBIN)/ginkgo -p -nodes=32 -v --focus="\[ebs-csi-e2e\] \[single-az\]" t
 - запустить юнит тесты (проверить что код собирается)
 - - cd <repo_base_dir>
 - - make test
-- запустить e2e тесты:
-- - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[single-az\]" <repo_base_dir>/tests/e2e -- -report-dir=./reports/
-
+- запустить e2e тесты для single az:
+- - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[single-az\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
+- запустить e2e тесты для multi az:
+- - export AWS_AVAILABILITY_ZONES="ru-msk-comp1p,ru-msk-vol51,ru-msk-vol52"
+- - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[multi-az\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
 Какие тесты есть:
 
 Красные:
-- "should create a pod, write and read to it, take a volume snapshot, and create another pod from the snapshot" - снапшоттинг не реализован
-
-Пропущенные:
-- все с тегами multi-az
+- "should create a volume on demand and resize it" - не реализован метод describe-volumes-modifications
 
 Зеленые:
-- "should create a volume on demand with volume type %q and fs type %q", volumeType, fsType
-- "should create a volume on demand with volumeType %q and encryption", volumeType
-- "should create a volume on demand with provided mountOptions"
+- "should use a pre-defined snapshot and create pv from that"
+- "should create a pod, write and read to it, take a volume snapshot, and create another pod from the snapshot"
+- "should create a volume on demand with volumeType "gp2" and encryption"
+- "should create a volume on demand with volumeType "st2" and encryption"
+- "should create a volume on demand with volume type "gp2" and fs type "xfs""
+- "should create a volume on demand with volume type "st2" and fs type "xfs""
+- "should create a volume on demand with volume type "io2" and fs type "xfs""
+- "should create a volume on demand with volumeType "io2" and encryption"
 - "should create multiple PV objects, bind to PVCs and attach all to a single pod"
 - "should create multiple PV objects, bind to PVCs and attach all to different pods"
 - "should create a raw block volume on demand"
 - "should create a raw block volume and a filesystem volume on demand and bind to the same pod"
 - "should create multiple PV objects, bind to PVCs and attach all to different pods on the same node"
 - "should create a volume on demand and mount it as readOnly in a pod"
-- "should delete PV with reclaimPolicy %q", v1.PersistentVolumeReclaimDelete
-- "[env] should retain PV with reclaimPolicy %q", v1.PersistentVolumeReclaimRetain
+- "should delete PV with reclaimPolicy "Delete""
+- "[env] should retain PV with reclaimPolicy "Retain""
 - "should create a deployment object, write and read to it, delete the pod and write and read to it again"
 - "should allow for topology aware volume scheduling"
 - "[env] should allow for topology aware volume with specified zone in allowedTopologies"
 - "[env] should write and read to a pre-provisioned volume"
 - "[env] should use a pre-provisioned volume and mount it as readOnly in a pod"
-- "[env] should use a pre-provisioned volume and retain PV with reclaimPolicy %q", v1.PersistentVolumeReclaimRetain
-- "[env] should use a pre-provisioned volume and delete PV with reclaimPolicy %q", v1.PersistentVolumeReclaimDelete"
+- "[env] should use a pre-provisioned volume and retain PV with reclaimPolicy "Retain""
+- "[env] should use a pre-provisioned volume and delete PV with reclaimPolicy "Delete""
+- "[env] should allow for topology aware volume with specified zone in allowedTopologies"
+- "should allow for topology aware volume scheduling"
+- "should create a volume on demand with provided mountOptions"
