@@ -141,8 +141,8 @@ func IOPSPerGBForVolumeType(volumeType string) string {
 		// Maximum IOPS/GB for io1 is 50
 		return "50"
 	case "io2":
-		// Maximum IOPS/GB for io2 is 500
-		return "500"
+		// Maximum IOPS/GB for io2 is 50
+		return "50"
 	default:
 		return ""
 	}
