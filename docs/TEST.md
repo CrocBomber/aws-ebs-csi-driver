@@ -60,15 +60,15 @@ $(go env GOBIN)/ginkgo -p -nodes=32 -v --focus="\[ebs-csi-e2e\] \[single-az\]" t
 
 Для выполнения тестов потребуется:
 - Для single-az 1 нода мастер и 1 воркер
-- Для multi-az 3 ноды мастеров в разных аз и 3 воркера в разных аз
+- Для multi-az 3 ноды мастеров в разных аз и 1 воркер в одной аз
 Как запустить тесты
 Для запуска тестов нам понадобится.
 - [создать](https://docs.cloud.croc.ru/ru/services/kubernetes.html#creating) бубернетес кластер в ц2 кдауде
 - попасть по ссш на мастер ноду и выполнить ```sudo -i```
 - проверить что в руте настроен kubectl - выполнить: ```kubectl get nodes```
 - установить голанг:
-- - cd /tmp && curl -O https://dl.google.com/go/go1.16.10.linux-amd64.tar.gz
-- - tar -xzf go1.16.10.linux-amd64.tar.gz
+- - cd /tmp && curl -O https://dl.google.com/go/go1.16.9.linux-amd64.tar.gz
+- - tar -xzf go1.16.9.linux-amd64.tar.gz
 - - mv go /usr/local
 - - export GOROOT=/usr/local/go
 - - export PATH=$GOROOT/bin:$PATH
@@ -80,19 +80,20 @@ $(go env GOBIN)/ginkgo -p -nodes=32 -v --focus="\[ebs-csi-e2e\] \[single-az\]" t
 - задать переменные окружения для подлкючения тестов к облаку:
 - - export AWS_EC2_ENDPOINT="https://api.cloud.croc.ru"
 - - export AWS_AVAILABILITY_ZONES="ru-msk-comp1p"
+- - Воркер должен быть в той же аз что и указана 
 - - export AWS_SECRET_ACCESS_KEY="<secret_key>"
 - - export AWS_ACCESS_KEY_ID="<access_key>"
-- установить ginkgo:
-- - go get -u github.com/onsi/ginkgo/ginkgo
 - задать переменные окружения для подлючения тестов к k8s:
 - - export KUBECONFIG=$HOME/.kube/config 
 - запустить юнит тесты (проверить что код собирается)
 - - cd <repo_base_dir>
+- - Выполнить ```go get -u modernc.org/cc@v1.0.0``` (временный воркераунд, связанный с недоступностью go зависимостей)
 - - make test
+- установить ginkgo:
+- - go get github.com/onsi/ginkgo/ginkgo@v1.11.0
 - запустить e2e тесты для single az:
 - - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[single-az\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
 - запустить e2e тесты для multi az:
-- - export AWS_AVAILABILITY_ZONES="ru-msk-comp1p,ru-msk-vol51,ru-msk-vol52"
 - - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[multi-az\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
 Какие тесты есть:
 
