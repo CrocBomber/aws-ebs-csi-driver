@@ -111,18 +111,18 @@ func TestCreateDisk(t *testing.T) {
 			name:       "success: normal with io2 options",
 			volumeName: "vol-test-name",
 			diskOptions: &DiskOptions{
-				CapacityBytes: util.GiBToBytes(1),
+				CapacityBytes: util.GiBToBytes(8),
 				Tags:          map[string]string{VolumeNameTagKey: "vol-test", AwsEbsDriverTagKey: "true"},
 				VolumeType:    VolumeTypeIO2,
-				IOPSPerGB:     100,
+				IOPSPerGB:     50,
 			},
 			expDisk: &Disk{
 				VolumeID:         "vol-test",
-				CapacityGiB:      1,
+				CapacityGiB:      8,
 				AvailabilityZone: defaultZone,
 			},
 			expCreateVolumeInput: &ec2.CreateVolumeInput{
-				Iops: aws.Int64(100),
+				Iops: aws.Int64(400),
 			},
 			expErr: nil,
 		},
@@ -479,7 +479,7 @@ func TestCreateDisk(t *testing.T) {
 				AvailabilityZone: defaultZone,
 			},
 			expCreateVolumeInput: &ec2.CreateVolumeInput{
-				Iops: aws.Int64(2000),
+				Iops: aws.Int64(200),
 			},
 			expErr: nil,
 		},
@@ -498,7 +498,7 @@ func TestCreateDisk(t *testing.T) {
 				AvailabilityZone: defaultZone,
 			},
 			expCreateVolumeInput: &ec2.CreateVolumeInput{
-				Iops: aws.Int64(64000),
+				Iops: aws.Int64(50000),
 			},
 			expErr: nil,
 		},
