@@ -1422,6 +1422,78 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	return c.checkDesiredSize(ctx, volumeID, newSizeGiB)
 }
 
+// ResizeDiskC2 resizes an EBS volume in C2 cloud. 
+// It returns the volume size after this call or an error if the size couldn't be determined.
+//
+// ResizeDiskC2 is an adaptation of ResizeDisk function for C2 cloud. Differences:
+// 1. Pending volume modifications are detected by ModifyVolume request which returns a lock error if another operation is in progress.
+// 2. C2 implementation of ModifyVolume uses 8-GiB increments.
+func (c *cloud) ResizeDiskC2(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
+	describeVolumesReq := &ec2.DescribeVolumesInput{
+		VolumeIds: []*string{
+			aws.String(volumeID),
+		},
+	}
+
+	volume, err := c.getVolume(ctx, describeVolumesReq)
+	if err != nil {
+		return 0, err
+	}
+
+	newSizeGiB := util.RoundUpGiB(newSizeBytes)
+	oldSizeGiB := aws.Int64Value(volume.Size)
+
+	// According to CSI spec: if a volume corresponding to the specified volume ID is already larger than 
+	// or equal to the target capacity, the plugin should reply without errors.
+	if oldSizeGiB >= newSizeGiB {
+		klog.V(5).Infof("[Debug] Volume %q current size (%d GiB) is greater or equal to the new size (%d GiB)", volumeID, oldSizeGiB, newSizeGiB)
+
+		// Need to check that there are no pending volume modifications (via ModifyVolume request).
+		newSizeGiB = oldSizeGiB
+		klog.V(4).Infof("Requested size value changed to current size value (%d GiB)", newSizeGiB)
+	}
+	
+	modifyVolumeReq := &ec2.ModifyVolumeInput{
+		VolumeId: aws.String(volumeID),
+		Size:     aws.Int64(newSizeGiB),
+	}
+
+	klog.V(4).Infof("Expanding volume %q to size %d", volumeID, newSizeGiB)
+	_, err = c.ec2.ModifyVolumeWithContext(ctx, modifyVolumeReq)
+	if err != nil {
+		return 0, fmt.Errorf("could not modify C2 volume %q: %v", volumeID, err)
+	}
+
+	backoff := wait.Backoff{
+		Duration: volumeModificationDuration,
+		Factor:   volumeModificationWaitFactor,
+		Steps:    volumeModificationWaitSteps,
+	}
+
+	var actualSizeGiB int64 
+	waitErr := wait.ExponentialBackoff(backoff, func() (bool, error) {
+		
+		volume, err := c.getVolume(ctx, describeVolumesReq)
+		if err != nil {
+			return true, err
+		}
+	
+		oldSizeGiB := aws.Int64Value(volume.Size)
+		if oldSizeGiB >= newSizeGiB {
+			actualSizeGiB = oldSizeGiB
+			return true, nil
+		}
+
+		return false, nil
+	})
+
+	if waitErr != nil {
+		return 0, waitErr
+	}
+
+	return actualSizeGiB, nil
+}
+
 // Checks for desired size on volume by also verifying volume size by describing volume.
 // This is to get around potential eventual consistency problems with describing volume modifications
 // objects and ensuring that we read two different objects to verify volume state.
