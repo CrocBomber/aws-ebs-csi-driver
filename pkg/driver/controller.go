@@ -514,7 +514,7 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
 	}
 
-	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+	actualSizeGiB, err := d.cloud.ResizeDiskC2(ctx, volumeID, newSize)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
 	}
