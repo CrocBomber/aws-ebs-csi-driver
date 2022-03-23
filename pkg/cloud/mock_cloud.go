@@ -272,6 +272,21 @@ func (mr *MockCloudMockRecorder) ResizeDisk(ctx, volumeID, reqSize interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDisk", reflect.TypeOf((*MockCloud)(nil).ResizeDisk), ctx, volumeID, reqSize)
 }
 
+// ResizeDiskC2 mocks base method.
+func (m *MockCloud) ResizeDiskC2(ctx context.Context, volumeID string, reqSize int64) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResizeDiskC2", ctx, volumeID, reqSize)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResizeDiskC2 indicates an expected call of ResizeDiskC2.
+func (mr *MockCloudMockRecorder) ResizeDiskC2(ctx, volumeID, reqSize interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDiskC2", reflect.TypeOf((*MockCloud)(nil).ResizeDiskC2), ctx, volumeID, reqSize)
+}
+
 // WaitForAttachmentState mocks base method.
 func (m *MockCloud) WaitForAttachmentState(ctx context.Context, volumeID, expectedState, expectedInstance, expectedDevice string, alreadyAssigned bool) (*ec2.VolumeAttachment, error) {
 	m.ctrl.T.Helper()
