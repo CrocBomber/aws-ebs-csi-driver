@@ -92,16 +92,13 @@ $(go env GOBIN)/ginkgo -p -nodes=32 -v --focus="\[ebs-csi-e2e\] \[single-az\]" t
 - установить ginkgo:
 - - go get github.com/onsi/ginkgo/ginkgo@v1.11.0
 - запустить e2e тесты для single az:
-- - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[single-az\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
+- - ~/go/bin/ginkgo -v -progress --focus="\\[ebs-csi-e2e\] \\[single-az\\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
 - запустить e2e тесты для multi az:
-- - ~/go/bin/ginkgo -v -progress --focus="\[ebs-csi-e2e\] \[multi-az\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
+- - ~/go/bin/ginkgo -v -progress --focus="\\[ebs-csi-e2e\] \\[multi-az\\]" /root/aws-ebs-csi-driver/tests/e2e -- -report-dir=./reports/ -kubeconfig=/root/.kube/config
 Какие тесты есть:
 
-Красные:
-- "should create a volume on demand and resize it" - не реализован метод describe-volumes-modifications
-
 Зеленые:
-- "should use a pre-defined snapshot and create pv from that"
+- "[env] should use a pre-defined snapshot and create pv from that"
 - "should create a pod, write and read to it, take a volume snapshot, and create another pod from the snapshot"
 - "should create a volume on demand with volumeType "gp2" and encryption"
 - "should create a volume on demand with volumeType "st2" and encryption"
@@ -118,12 +115,11 @@ $(go env GOBIN)/ginkgo -p -nodes=32 -v --focus="\[ebs-csi-e2e\] \[single-az\]" t
 - "should delete PV with reclaimPolicy "Delete""
 - "[env] should retain PV with reclaimPolicy "Retain""
 - "should create a deployment object, write and read to it, delete the pod and write and read to it again"
+- "should create a volume on demand and resize it"
 - "should allow for topology aware volume scheduling"
 - "[env] should allow for topology aware volume with specified zone in allowedTopologies"
 - "[env] should write and read to a pre-provisioned volume"
 - "[env] should use a pre-provisioned volume and mount it as readOnly in a pod"
 - "[env] should use a pre-provisioned volume and retain PV with reclaimPolicy "Retain""
 - "[env] should use a pre-provisioned volume and delete PV with reclaimPolicy "Delete""
-- "[env] should allow for topology aware volume with specified zone in allowedTopologies"
-- "should allow for topology aware volume scheduling"
 - "should create a volume on demand with provided mountOptions"
