@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/mounter"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/mounter"
 )
 
 func (m NodeMounter) FormatAndMount(source string, target string, fstype string, options []string) error {

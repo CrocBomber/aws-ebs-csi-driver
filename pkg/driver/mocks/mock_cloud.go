@@ -10,8 +10,8 @@ import (
 
 	arn "github.com/aws/aws-sdk-go/aws/arn"
 	ec2 "github.com/aws/aws-sdk-go/service/ec2"
+	cloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 	gomock "github.com/golang/mock/gomock"
-	cloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
 )
 
 // MockCloud is a mock of Cloud interface.
@@ -228,6 +228,21 @@ func (m *MockCloud) ResizeDisk(ctx context.Context, volumeID string, reqSize int
 func (mr *MockCloudMockRecorder) ResizeDisk(ctx, volumeID, reqSize interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDisk", reflect.TypeOf((*MockCloud)(nil).ResizeDisk), ctx, volumeID, reqSize)
+}
+
+// ResizeDiskC2 mocks base method.
+func (m *MockCloud) ResizeDiskC2(ctx context.Context, volumeID string, reqSize int64) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResizeDiskC2", ctx, volumeID, reqSize)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResizeDiskC2 indicates an expected call of ResizeDiskC2.
+func (mr *MockCloudMockRecorder) ResizeDiskC2(ctx, volumeID, reqSize interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDiskC2", reflect.TypeOf((*MockCloud)(nil).ResizeDiskC2), ctx, volumeID, reqSize)
 }
 
 // WaitForAttachmentState mocks base method.

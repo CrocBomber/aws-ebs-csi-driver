@@ -114,7 +114,7 @@ def print_notes(args):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Generate release CHANGELOG')
-    parser.add_argument('--repo', metavar='repo', type=str, default='kubernetes-sigs/aws-ebs-csi-driver', help='the full github repository name')
+    parser.add_argument('--repo', metavar='repo', type=str, default='c2devel/aws-ebs-csi-driver', help='the full github repository name')
     parser.add_argument('--github-user', metavar='user', type=str, help='the github user for github api')
     parser.add_argument('--github-token', metavar='token', type=str, help='the github token for github api')
 

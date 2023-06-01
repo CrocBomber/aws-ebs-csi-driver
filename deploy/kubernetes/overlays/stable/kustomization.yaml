@@ -3,13 +3,17 @@ kind: Kustomization
 bases:
   - ../../base
 images:
-  - name: k8s.gcr.io/provider-aws/aws-ebs-csi-driver
-    newTag: v1.1.1
-  - name: k8s.gcr.io/sig-storage/csi-provisioner
+  - name: dhub.c2.croc.ru/kaas/aws-ebs-csi-driver
+    newTag: v1.1.1-CROC4
+  - name: dhub.c2.croc.ru/kaas/csi-provisioner
     newTag: v2.1.1
-  - name: k8s.gcr.io/sig-storage/csi-attacher
+  - name: dhub.c2.croc.ru/kaas/csi-attacher
     newTag: v3.1.0
-  - name: k8s.gcr.io/sig-storage/livenessprobe
+  - name: dhub.c2.croc.ru/kaas/livenessprobe
     newTag: v2.2.0
-  - name: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+  - name: dhub.c2.croc.ru/kaas/csi-node-driver-registrar
     newTag: v2.1.0
+  - name: dhub.c2.croc.ru/kaas/csi-snapshotter
+    newTag: v3.0.3
+  - name: dhub.c2.croc.ru/kaas/csi-resizer
+    newTag: v1.0.0

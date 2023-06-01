@@ -135,12 +135,16 @@ func EC2MetadataInstanceInfo(svc EC2Metadata) (*Metadata, error) {
 		return nil, fmt.Errorf("could not get valid EC2 instance type")
 	}
 
-	if len(doc.Region) == 0 {
+	if len(doc.Region) == 0 && os.Getenv("AWS_REGION") == "" {
 		return nil, fmt.Errorf("could not get valid EC2 region")
 	}
 
 	if len(doc.AvailabilityZone) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 availability zone")
+	}
+
+	if len(doc.Region) == 0 {
+		doc.Region = os.Getenv("AWS_REGION")
 	}
 
 	instanceInfo := Metadata{

@@ -18,19 +18,23 @@ package cloud
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	dm "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud/devicemanager"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
 )
@@ -49,6 +53,8 @@ const (
 	VolumeTypeSC1 = "sc1"
 	// VolumeTypeST1 represents a throughput-optimized HDD type of volume.
 	VolumeTypeST1 = "st1"
+	// VolumeTypeST2 represents a throughput-optimized HDD type of volume.
+	VolumeTypeST2 = "st2"
 	// VolumeTypeStandard represents a previous type of  volume.
 	VolumeTypeStandard = "standard"
 )
@@ -60,19 +66,16 @@ const (
 	io1MaxTotalIOPS = 64000
 	io1MaxIOPSPerGB = 50
 	io2MinTotalIOPS = 100
-	io2MaxTotalIOPS = 64000
-	io2MaxIOPSPerGB = 500
+	io2MaxTotalIOPS = 50000
+	io2MaxIOPSPerGB = 50
 )
 
 var (
+	// ValidVolumeTypes represents list of available volume types
 	ValidVolumeTypes = []string{
-		VolumeTypeIO1,
 		VolumeTypeIO2,
 		VolumeTypeGP2,
-		VolumeTypeGP3,
-		VolumeTypeSC1,
-		VolumeTypeST1,
-		VolumeTypeStandard,
+		VolumeTypeST2,
 	}
 
 	volumeModificationDuration   = 1 * time.Second
@@ -105,9 +108,9 @@ const (
 // Defaults
 const (
 	// DefaultVolumeSize represents the default volume size.
-	DefaultVolumeSize int64 = 100 * util.GiB
+	DefaultVolumeSize int64 = 32 * util.GiB
 	// DefaultVolumeType specifies which storage to use for newly created Volumes.
-	DefaultVolumeType = VolumeTypeGP3
+	DefaultVolumeType = VolumeTypeGP2
 )
 
 // Tags
@@ -218,6 +221,179 @@ type cloud struct {
 
 var _ Cloud = &cloud{}
 
+// AttachVolumeRequest generates a "aws/request.Request" representing the
+// client's request for the AttachVolume operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See AttachVolume for more information on using the AttachVolume
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the AttachVolumeRequest method.
+//    req, resp := client.AttachVolumeRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/AttachVolume
+func AttachVolumeRequest(c *ec2.EC2, input *AttachVolumeInput) (req *request.Request, output *ec2.VolumeAttachment) {
+	op := &request.Operation{
+		Name:       "AttachVolume",
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &AttachVolumeInput{}
+	}
+
+	output = &ec2.VolumeAttachment{}
+	req = c.NewRequest(op, input, output)
+	return
+}
+
+// AttachVolume API operation for Amazon Elastic Compute Cloud.
+//
+// Attaches an EBS volume to a running or stopped instance and exposes it to
+// the instance with the specified device name.
+//
+// Encrypted EBS volumes must be attached to instances that support Amazon EBS
+// encryption. For more information, see Amazon EBS Encryption (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
+// After you attach an EBS volume, you must make it available. For more information,
+// see Making an EBS Volume Available For Use (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html).
+//
+// If a volume has an AWS Marketplace product code:
+//
+//    * The volume can be attached only to a stopped instance.
+//
+//    * AWS Marketplace product codes are copied from the volume to the instance.
+//
+//    * You must be subscribed to the product.
+//
+//    * The instance type and operating system of the instance must support
+//    the product. For example, you can't detach a volume from a Windows instance
+//    and attach it to a Linux instance.
+//
+// For more information, see Attaching Amazon EBS Volumes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Elastic Compute Cloud's
+// API operation AttachVolume for usage and error information.
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/AttachVolume
+func AttachVolume(c *ec2.EC2, input *AttachVolumeInput) (*ec2.VolumeAttachment, error) {
+	req, out := AttachVolumeRequest(c, input)
+	return out, req.Send()
+}
+
+// AttachVolumeWithContext is the same as AttachVolume with the addition of
+// the ability to pass a context and additional request options.
+//
+// See AttachVolume for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func AttachVolumeWithContext(c *ec2.EC2, ctx aws.Context, input *AttachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error) {
+	req, out := AttachVolumeRequest(c, input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
+// AttachVolumeInput is a type that Contains the parameters for AttachVolume.
+type AttachVolumeInput struct {
+	_ struct{} `type:"structure"`
+
+	// The device name (for example, /dev/sdh or xvdh).
+	//
+	// Device is a required field
+	Device *string `type:"string"`
+
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have
+	// the required permissions, the error response is DryRunOperation. Otherwise,
+	// it is UnauthorizedOperation.
+	DryRun *bool `locationName:"dryRun" type:"boolean"`
+
+	// The ID of the instance.
+	//
+	// InstanceId is a required field
+	InstanceId *string `type:"string" required:"true"`
+
+	// The ID of the EBS volume. The volume and instance must be within the same
+	// Availability Zone.
+	//
+	// VolumeId is a required field
+	VolumeId *string `type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s AttachVolumeInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s AttachVolumeInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *AttachVolumeInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "AttachVolumeInput"}
+
+	if s.InstanceId == nil {
+		invalidParams.Add(request.NewErrParamRequired("InstanceId"))
+	}
+	if s.VolumeId == nil {
+		invalidParams.Add(request.NewErrParamRequired("VolumeId"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDevice sets the Device field's value.
+func (s *AttachVolumeInput) SetDevice(v string) *AttachVolumeInput {
+	s.Device = &v
+	return s
+}
+
+// SetDryRun sets the DryRun field's value.
+func (s *AttachVolumeInput) SetDryRun(v bool) *AttachVolumeInput {
+	s.DryRun = &v
+	return s
+}
+
+// SetInstanceId sets the InstanceId field's value.
+func (s *AttachVolumeInput) SetInstanceId(v string) *AttachVolumeInput {
+	s.InstanceId = &v
+	return s
+}
+
+// SetVolumeId sets the VolumeId field's value.
+func (s *AttachVolumeInput) SetVolumeId(v string) *AttachVolumeInput {
+	s.VolumeId = &v
+	return s
+}
+
 // NewCloud returns a new instance of AWS cloud
 // It panics if session is invalid
 func NewCloud(region string, awsSdkDebugLog bool) (Cloud, error) {
@@ -226,11 +402,37 @@ func NewCloud(region string, awsSdkDebugLog bool) (Cloud, error) {
 }
 
 func newEC2Cloud(region string, awsSdkDebugLog bool) (Cloud, error) {
-	awsConfig := &aws.Config{
-		Region:                        aws.String(region),
-		CredentialsChainVerboseErrors: aws.Bool(true),
-		// Set MaxRetries to a high value. It will be "ovewritten" if context deadline comes sooner.
-		MaxRetries: aws.Int(8),
+
+	var awsConfig *aws.Config
+
+	envEndpointInsecure := os.Getenv("AWS_EC2_ENDPOINT_UNSECURE")
+	isEndpointInsecure := false
+	if envEndpointInsecure != "" {
+		var err error
+		isEndpointInsecure, err = strconv.ParseBool(envEndpointInsecure)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse environment variable AWS_EC2_ENDPOINT_UNSECURE: %v", err)
+		}
+	}
+
+	if isEndpointInsecure {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+
+		awsConfig = &aws.Config{
+			Region:                        aws.String(region),
+			CredentialsChainVerboseErrors: aws.Bool(true),
+			HTTPClient:                    client,
+		}
+	} else {
+		awsConfig = &aws.Config{
+			Region:                        aws.String(region),
+			CredentialsChainVerboseErrors: aws.Bool(true),
+			// Set MaxRetries to a high value. It will be "ovewritten" if context deadline comes sooner.
+			MaxRetries: aws.Int(8),
+		}
 	}
 
 	endpoint := os.Getenv("AWS_EC2_ENDPOINT")
@@ -272,7 +474,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
 
 	switch diskOptions.VolumeType {
-	case VolumeTypeGP2, VolumeTypeSC1, VolumeTypeST1, VolumeTypeStandard:
+	case VolumeTypeGP2, VolumeTypeST2, VolumeTypeStandard:
 		createType = diskOptions.VolumeType
 	case VolumeTypeIO1:
 		createType = diskOptions.VolumeType
@@ -403,13 +605,12 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 	defer device.Release(false)
 
 	if !device.IsAlreadyAssigned {
-		request := &ec2.AttachVolumeInput{
-			Device:     aws.String(device.Path),
+		request := &AttachVolumeInput{
 			InstanceId: aws.String(nodeID),
 			VolumeId:   aws.String(volumeID),
 		}
 
-		resp, err := c.ec2.AttachVolumeWithContext(ctx, request)
+		resp, err := AttachVolumeWithContext(c.ec2.(*ec2.EC2), ctx, request)
 		if err != nil {
 			if awsErr, ok := err.(awserr.Error); ok {
 				if awsErr.Code() == "VolumeInUse" {
@@ -437,7 +638,9 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 		// Impossible?
 		return "", fmt.Errorf("unexpected state: attachment nil after attached %q to %q", volumeID, nodeID)
 	}
-	if device.Path != aws.StringValue(attachment.Device) {
+
+	// using VolumeID instead of Device, because Device attribute can be changed
+	if device.VolumeID != aws.StringValue(attachment.VolumeId) {
 		// Already checked in waitForAttachmentState(), but just to be sure...
 		return "", fmt.Errorf("disk attachment of %q to %q failed: requested device %q but found %q", volumeID, nodeID, device.Path, aws.StringValue(attachment.Device))
 	}
@@ -475,6 +678,10 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 
 	_, err = c.ec2.DetachVolumeWithContext(ctx, request)
 	if err != nil {
+		if isAWSErrorVolumeIsNotAttached(err) {
+			klog.Warningf("Volume %v was already detached from node %v, ignoring...", volumeID, nodeID)
+			return nil
+		}
 		if isAWSErrorIncorrectState(err) ||
 			isAWSErrorInvalidAttachmentNotFound(err) ||
 			isAWSErrorVolumeNotFound(err) {
@@ -562,7 +769,9 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, expectedSt
 			// For example, we're waiting for a volume to be attached as /dev/xvdba, but AWS can tell us it's
 			// attached as /dev/xvdbb, where it was attached before and it was already detached.
 			// Retry couple of times, hoping AWS starts reporting the right status.
-			device := aws.StringValue(attachment.Device)
+			device := aws.StringValue(attachment.VolumeId)
+			const devPreffix = "/dev/disk/by-id/virtio-"
+			expectedDevice = strings.TrimPrefix(expectedDevice, devPreffix)
 			if expectedDevice != "" && device != "" && device != expectedDevice {
 				klog.Warningf("Expected device %s %s for volume %s, but found device %s %s", expectedDevice, expectedState, volumeID, device, attachmentState)
 				return false, nil
@@ -989,6 +1198,10 @@ func isAWSErrorSnapshotNotFound(err error) bool {
 	return isAWSError(err, "InvalidSnapshot.NotFound")
 }
 
+func isAWSErrorVolumeIsNotAttached(err error) bool {
+	return isAWSError(err, "VolumeIsNotAttached")
+}
+
 // ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
@@ -1059,6 +1272,78 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 		return oldSizeGiB, err
 	}
 	return c.checkDesiredSize(ctx, volumeID, newSizeGiB)
+}
+
+// ResizeDiskC2 resizes an EBS volume in C2 cloud. 
+// It returns the volume size after this call or an error if the size couldn't be determined.
+//
+// ResizeDiskC2 is an adaptation of ResizeDisk function for C2 cloud. Differences:
+// 1. Pending volume modifications are detected by ModifyVolume request which returns a lock error if another operation is in progress.
+// 2. C2 implementation of ModifyVolume uses 8-GiB increments.
+func (c *cloud) ResizeDiskC2(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
+	describeVolumesReq := &ec2.DescribeVolumesInput{
+		VolumeIds: []*string{
+			aws.String(volumeID),
+		},
+	}
+
+	volume, err := c.getVolume(ctx, describeVolumesReq)
+	if err != nil {
+		return 0, err
+	}
+
+	newSizeGiB := util.RoundUpGiB(newSizeBytes)
+	oldSizeGiB := aws.Int64Value(volume.Size)
+
+	// According to CSI spec: if a volume corresponding to the specified volume ID is already larger than 
+	// or equal to the target capacity, the plugin should reply without errors.
+	if oldSizeGiB >= newSizeGiB {
+		klog.V(5).Infof("[Debug] Volume %q current size (%d GiB) is greater or equal to the new size (%d GiB)", volumeID, oldSizeGiB, newSizeGiB)
+
+		// Need to check that there are no pending volume modifications (via ModifyVolume request).
+		newSizeGiB = oldSizeGiB
+		klog.V(4).Infof("Requested size value changed to current size value (%d GiB)", newSizeGiB)
+	}
+	
+	modifyVolumeReq := &ec2.ModifyVolumeInput{
+		VolumeId: aws.String(volumeID),
+		Size:     aws.Int64(newSizeGiB),
+	}
+
+	klog.V(4).Infof("Expanding volume %q to size %d", volumeID, newSizeGiB)
+	_, err = c.ec2.ModifyVolumeWithContext(ctx, modifyVolumeReq)
+	if err != nil {
+		return 0, fmt.Errorf("could not modify C2 volume %q: %v", volumeID, err)
+	}
+
+	backoff := wait.Backoff{
+		Duration: volumeModificationDuration,
+		Factor:   volumeModificationWaitFactor,
+		Steps:    volumeModificationWaitSteps,
+	}
+
+	var actualSizeGiB int64 
+	waitErr := wait.ExponentialBackoff(backoff, func() (bool, error) {
+		
+		volume, err := c.getVolume(ctx, describeVolumesReq)
+		if err != nil {
+			return true, err
+		}
+	
+		oldSizeGiB := aws.Int64Value(volume.Size)
+		if oldSizeGiB >= newSizeGiB {
+			actualSizeGiB = oldSizeGiB
+			return true, nil
+		}
+
+		return false, nil
+	})
+
+	if waitErr != nil {
+		return 0, waitErr
+	}
+
+	return actualSizeGiB, nil
 }
 
 // Checks for desired size on volume by also verifying volume size by describing volume.

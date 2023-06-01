@@ -26,7 +26,7 @@ import (
 	"k8s.io/klog"
 )
 
-const devPreffix = "/dev/xvd"
+const devPreffix = "/dev/disk/by-id/virtio-"
 
 type Device struct {
 	Instance          *ec2.Instance
@@ -62,9 +62,6 @@ type DeviceManager interface {
 }
 
 type deviceManager struct {
-	// nameAllocator assigns new device name
-	nameAllocator NameAllocator
-
 	// We keep an active list of devices we have assigned but not yet
 	// attached, to avoid a race condition where we assign a device mapping
 	// and then get a second request before we attach the volume.
@@ -101,8 +98,7 @@ func (i inFlightAttaching) GetVolume(nodeID, name string) string {
 
 func NewDeviceManager() DeviceManager {
 	return &deviceManager{
-		nameAllocator: &nameAllocator{},
-		inFlight:      make(inFlightAttaching),
+		inFlight: make(inFlightAttaching),
 	}
 }
 
@@ -115,7 +111,7 @@ func (d *deviceManager) NewDevice(instance *ec2.Instance, volumeID string) (*Dev
 	}
 
 	// Get device names being attached and already attached to this instance
-	inUse := d.getDeviceNamesInUse(instance)
+	inUse := d.getVolumeIdsInUse(instance)
 
 	// Check if this volume is already assigned a device on this machine
 	if path := d.getPath(inUse, volumeID); path != "" {
@@ -127,22 +123,17 @@ func (d *deviceManager) NewDevice(instance *ec2.Instance, volumeID string) (*Dev
 		return nil, err
 	}
 
-	name, err := d.nameAllocator.GetNext(inUse)
-	if err != nil {
-		return nil, fmt.Errorf("could not get a free device name to assign to node %s", nodeID)
-	}
-
 	// Add the chosen device and volume to the "attachments in progress" map
-	d.inFlight.Add(nodeID, volumeID, name)
+	d.inFlight.Add(nodeID, volumeID, volumeID)
 
-	return d.newBlockDevice(instance, volumeID, devPreffix+name, false), nil
+	return d.newBlockDevice(instance, volumeID, devPreffix+volumeID, false), nil
 }
 
 func (d *deviceManager) GetDevice(instance *ec2.Instance, volumeID string) (*Device, error) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	inUse := d.getDeviceNamesInUse(instance)
+	inUse := d.getVolumeIdsInUse(instance)
 
 	if path := d.getPath(inUse, volumeID); path != "" {
 		return d.newBlockDevice(instance, volumeID, path, true), nil
@@ -175,12 +166,7 @@ func (d *deviceManager) release(device *Device) error {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	var name string
-	if len(device.Path) > 2 {
-		name = strings.TrimPrefix(device.Path, devPreffix)
-	}
-
-	existingVolumeID := d.inFlight.GetVolume(nodeID, name)
+	existingVolumeID := d.inFlight.GetVolume(nodeID, device.VolumeID)
 	if len(existingVolumeID) == 0 {
 		// Attaching is not in progress, so there's nothing to release
 		return nil
@@ -195,39 +181,39 @@ func (d *deviceManager) release(device *Device) error {
 	}
 
 	klog.V(5).Infof("[Debug] Releasing in-process attachment entry: %v -> volume %s", device.Path, device.VolumeID)
-	d.inFlight.Del(nodeID, name)
+	d.inFlight.Del(nodeID, device.VolumeID)
 
 	return nil
 }
 
-// getDeviceNamesInUse returns the device to volume ID mapping
+// getVolumeIdsInUse returns the device to volume ID mapping
 // the mapping includes both already attached and being attached volumes
-func (d *deviceManager) getDeviceNamesInUse(instance *ec2.Instance) map[string]string {
+func (d *deviceManager) getVolumeIdsInUse(instance *ec2.Instance) []string {
 	nodeID := aws.StringValue(instance.InstanceId)
-	inUse := map[string]string{}
+	var inUse []string
 	for _, blockDevice := range instance.BlockDeviceMappings {
-		name := aws.StringValue(blockDevice.DeviceName)
-		// trims /dev/sd or /dev/xvd from device name
-		name = strings.TrimPrefix(name, "/dev/sd")
-		name = strings.TrimPrefix(name, "/dev/xvd")
-
-		if len(name) < 1 || len(name) > 2 {
-			klog.Warningf("Unexpected EBS DeviceName: %q", aws.StringValue(blockDevice.DeviceName))
+		if blockDevice.Ebs == nil {
+			continue
 		}
-		inUse[name] = aws.StringValue(blockDevice.Ebs.VolumeId)
+
+		name := aws.StringValue(blockDevice.DeviceName)
+		// trim device prefix from name
+		name = strings.TrimPrefix(name, devPreffix)
+
+		inUse = append(inUse, *blockDevice.Ebs.VolumeId)
 	}
 
-	for name, volumeID := range d.inFlight.GetNames(nodeID) {
-		inUse[name] = volumeID
+	for _, volumeID := range d.inFlight.GetNames(nodeID) {
+		inUse = append(inUse, volumeID)
 	}
 
 	return inUse
 }
 
-func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string {
-	for name, volID := range inUse {
+func (d *deviceManager) getPath(inUse []string, volumeID string) string {
+	for _, volID := range inUse {
 		if volumeID == volID {
-			return devPreffix + name
+			return devPreffix + volumeID
 		}
 	}
 	return ""

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 )
 
 func ValidateDriverOptions(options *DriverOptions) error {

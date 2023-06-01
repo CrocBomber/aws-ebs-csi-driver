@@ -21,12 +21,12 @@ import (
 	"os"
 	"strings"
 
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	ebscsidriver "github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	k8srestclient "k8s.io/client-go/rest"
 
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/testsuites"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/testsuites"
 	. "github.com/onsi/ginkgo"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	defaultDiskSize   = 4
-	defaultVoluemType = awscloud.VolumeTypeGP3
+	defaultDiskSize   = 8
+	defaultVoluemType = awscloud.VolumeTypeGP2
 
 	awsAvailabilityZonesEnv = "AWS_AVAILABILITY_ZONES"
 
@@ -95,7 +95,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		}
 		volumeID = disk.VolumeID
 		diskSize = fmt.Sprintf("%dGi", defaultDiskSize)
-		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1)
+		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1beta1)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get rest clientset: %v", err))
 		}

@@ -17,7 +17,7 @@ limitations under the License.
 package driver
 
 import (
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/mounter"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/mounter"
 	mountutils "k8s.io/mount-utils"
 )
 

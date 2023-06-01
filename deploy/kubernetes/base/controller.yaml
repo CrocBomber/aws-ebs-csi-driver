@@ -31,7 +31,7 @@ spec:
           tolerationSeconds: 300
       containers:
         - name: ebs-plugin
-          image: k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.1
+          image: dhub.c2.croc.ru/kaas/aws-ebs-csi-driver:latest
           imagePullPolicy: IfNotPresent
           args:
             # - {all,controller,node} # specify the driver mode
@@ -45,6 +45,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: AWS_EC2_ENDPOINT
+              value: https://api.cloud.croc.ru
+            - name: AWS_REGION
+              value: croc
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -81,7 +85,7 @@ spec:
             periodSeconds: 10
             failureThreshold: 5
         - name: csi-provisioner
-          image: k8s.gcr.io/sig-storage/csi-provisioner:v2.1.1
+          image: dhub.c2.croc.ru/kaas/csi-provisioner:v2.1.1
           args:
             - --csi-address=$(ADDRESS)
             - --v=2
@@ -96,7 +100,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-attacher
-          image: k8s.gcr.io/sig-storage/csi-attacher:v3.1.0
+          image: dhub.c2.croc.ru/kaas/csi-attacher:v3.1.0
           args:
             - --csi-address=$(ADDRESS)
             - --v=2
@@ -131,7 +135,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: k8s.gcr.io/sig-storage/livenessprobe:v2.2.0
+          image: dhub.c2.croc.ru/kaas/livenessprobe:v2.2.0
           args:
             - --csi-address=/csi/csi.sock
           volumeMounts:

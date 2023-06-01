@@ -1,9 +1,8 @@
-module github.com/kubernetes-sigs/aws-ebs-csi-driver
+module github.com/c2devel/aws-ebs-csi-driver
 
 require (
 	github.com/aws/aws-sdk-go v1.35.37
 	github.com/container-storage-interface/spec v1.3.0
-	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/golang/mock v1.5.0
 	github.com/golang/protobuf v1.4.3
 	github.com/imdario/mergo v0.3.7 // indirect

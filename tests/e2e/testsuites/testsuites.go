@@ -21,10 +21,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-
-	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	v1beta1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
 	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -86,11 +85,11 @@ func (t *TestStorageClass) Cleanup() {
 
 type TestVolumeSnapshotClass struct {
 	client              restclientset.Interface
-	volumeSnapshotClass *volumesnapshotv1.VolumeSnapshotClass
+	volumeSnapshotClass *v1beta1.VolumeSnapshotClass
 	namespace           *v1.Namespace
 }
 
-func NewTestVolumeSnapshotClass(c restclientset.Interface, ns *v1.Namespace, vsc *volumesnapshotv1.VolumeSnapshotClass) *TestVolumeSnapshotClass {
+func NewTestVolumeSnapshotClass(c restclientset.Interface, ns *v1.Namespace, vsc *v1beta1.VolumeSnapshotClass) *TestVolumeSnapshotClass {
 	return &TestVolumeSnapshotClass{
 		client:              c,
 		volumeSnapshotClass: vsc,
@@ -101,13 +100,13 @@ func NewTestVolumeSnapshotClass(c restclientset.Interface, ns *v1.Namespace, vsc
 func (t *TestVolumeSnapshotClass) Create() {
 	By("creating a VolumeSnapshotClass")
 	var err error
-	t.volumeSnapshotClass, err = snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshotClasses().Create(context.TODO(), t.volumeSnapshotClass, metav1.CreateOptions{})
+	t.volumeSnapshotClass, err = snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshotClasses().Create(context.TODO(), t.volumeSnapshotClass, metav1.CreateOptions{})
 	framework.ExpectNoError(err)
 }
 
-func (t *TestVolumeSnapshotClass) CreateSnapshot(pvc *v1.PersistentVolumeClaim) *volumesnapshotv1.VolumeSnapshot {
+func (t *TestVolumeSnapshotClass) CreateSnapshot(pvc *v1.PersistentVolumeClaim) *v1beta1.VolumeSnapshot {
 	By("creating a VolumeSnapshot for " + pvc.Name)
-	snapshot := &volumesnapshotv1.VolumeSnapshot{
+	snapshot := &v1beta1.VolumeSnapshot{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       VolumeSnapshotKind,
 			APIVersion: SnapshotAPIVersion,
@@ -116,21 +115,21 @@ func (t *TestVolumeSnapshotClass) CreateSnapshot(pvc *v1.PersistentVolumeClaim) 
 			GenerateName: "volume-snapshot-",
 			Namespace:    t.namespace.Name,
 		},
-		Spec: volumesnapshotv1.VolumeSnapshotSpec{
+		Spec: v1beta1.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: &t.volumeSnapshotClass.Name,
-			Source: volumesnapshotv1.VolumeSnapshotSource{
+			Source: v1beta1.VolumeSnapshotSource{
 				PersistentVolumeClaimName: &pvc.Name,
 			},
 		},
 	}
-	snapshot, err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshots(t.namespace.Name).Create(context.TODO(), snapshot, metav1.CreateOptions{})
+	snapshot, err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshots(t.namespace.Name).Create(context.TODO(), snapshot, metav1.CreateOptions{})
 	framework.ExpectNoError(err)
 	return snapshot
 }
 
-func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshot(vsc *volumesnapshotv1.VolumeSnapshotContent) *volumesnapshotv1.VolumeSnapshot {
+func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshot(vsc *v1beta1.VolumeSnapshotContent) *v1beta1.VolumeSnapshot {
 	By("creating a VolumeSnapshot from vsc " + vsc.Name)
-	snapshot := &volumesnapshotv1.VolumeSnapshot{
+	snapshot := &v1beta1.VolumeSnapshot{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       VolumeSnapshotKind,
 			APIVersion: SnapshotAPIVersion,
@@ -139,21 +138,21 @@ func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshot(vsc *volumesnapshot
 			Name:      volumeSnapshotNameStatic,
 			Namespace: t.namespace.Name,
 		},
-		Spec: volumesnapshotv1.VolumeSnapshotSpec{
+		Spec: v1beta1.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: &t.volumeSnapshotClass.Name,
-			Source: volumesnapshotv1.VolumeSnapshotSource{
+			Source: v1beta1.VolumeSnapshotSource{
 				VolumeSnapshotContentName: &vsc.Name,
 			},
 		},
 	}
-	snapshotObj, err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshots(t.namespace.Name).Create(context.TODO(), snapshot, metav1.CreateOptions{})
+	snapshotObj, err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshots(t.namespace.Name).Create(context.TODO(), snapshot, metav1.CreateOptions{})
 	framework.ExpectNoError(err)
 	return snapshotObj
 }
 
-func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshotContent(snapshotId string) *volumesnapshotv1.VolumeSnapshotContent {
+func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshotContent(snapshotId string) *v1beta1.VolumeSnapshotContent {
 	By("creating a VolumeSnapshotContent from snapshotId: " + snapshotId)
-	snapshotContent := &volumesnapshotv1.VolumeSnapshotContent{
+	snapshotContent := &v1beta1.VolumeSnapshotContent{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       VolumeSnapshotContentKind,
 			APIVersion: SnapshotAPIVersion,
@@ -162,7 +161,7 @@ func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshotContent(snapshotId s
 			Name:      volumeSnapshotContenetNameStatic,
 			Namespace: t.namespace.Name,
 		},
-		Spec: volumesnapshotv1.VolumeSnapshotContentSpec{
+		Spec: v1beta1.VolumeSnapshotContentSpec{
 			VolumeSnapshotClassName: &t.volumeSnapshotClass.Name,
 			DeletionPolicy:          "Delete",
 			VolumeSnapshotRef: v1.ObjectReference{
@@ -171,26 +170,26 @@ func (t *TestVolumeSnapshotClass) CreateStaticVolumeSnapshotContent(snapshotId s
 				Namespace: t.namespace.Name,
 			},
 			Driver: "ebs.csi.aws.com",
-			Source: volumesnapshotv1.VolumeSnapshotContentSource{
+			Source: v1beta1.VolumeSnapshotContentSource{
 				SnapshotHandle: aws.String(snapshotId),
 			},
 		},
 	}
-	volumeSnapshotContent, err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshotContents().Create(context.TODO(), snapshotContent, metav1.CreateOptions{})
+	volumeSnapshotContent, err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshotContents().Create(context.TODO(), snapshotContent, metav1.CreateOptions{})
 	framework.ExpectNoError(err)
 	return volumeSnapshotContent
 }
 
-func (t *TestVolumeSnapshotClass) UpdateStaticVolumeSnapshotContent(volumeSnapshot *volumesnapshotv1.VolumeSnapshot, volumeSnapshotContent *volumesnapshotv1.VolumeSnapshotContent) {
+func (t *TestVolumeSnapshotClass) UpdateStaticVolumeSnapshotContent(volumeSnapshot *v1beta1.VolumeSnapshot, volumeSnapshotContent *v1beta1.VolumeSnapshotContent) {
 	volumeSnapshotContent.Spec.VolumeSnapshotRef.Name = volumeSnapshot.Name
-	volumeSnapshotContent, err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshotContents().Update(context.TODO(), volumeSnapshotContent, metav1.UpdateOptions{})
+	volumeSnapshotContent, err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshotContents().Update(context.TODO(), volumeSnapshotContent, metav1.UpdateOptions{})
 	framework.ExpectNoError(err)
 
 }
-func (t *TestVolumeSnapshotClass) ReadyToUse(snapshot *volumesnapshotv1.VolumeSnapshot) {
+func (t *TestVolumeSnapshotClass) ReadyToUse(snapshot *v1beta1.VolumeSnapshot) {
 	By("waiting for VolumeSnapshot to be ready to use - " + snapshot.Name)
 	err := wait.Poll(15*time.Second, 5*time.Minute, func() (bool, error) {
-		vs, err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshots(t.namespace.Name).Get(context.TODO(), snapshot.Name, metav1.GetOptions{})
+		vs, err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshots(t.namespace.Name).Get(context.TODO(), snapshot.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("did not see ReadyToUse: %v", err)
 		}
@@ -203,18 +202,18 @@ func (t *TestVolumeSnapshotClass) ReadyToUse(snapshot *volumesnapshotv1.VolumeSn
 	framework.ExpectNoError(err)
 }
 
-func (t *TestVolumeSnapshotClass) DeleteSnapshot(vs *volumesnapshotv1.VolumeSnapshot) {
+func (t *TestVolumeSnapshotClass) DeleteSnapshot(vs *v1beta1.VolumeSnapshot) {
 	By("deleting a VolumeSnapshot " + vs.Name)
-	err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshots(t.namespace.Name).Delete(context.TODO(), vs.Name, metav1.DeleteOptions{})
+	err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshots(t.namespace.Name).Delete(context.TODO(), vs.Name, metav1.DeleteOptions{})
 	framework.ExpectNoError(err)
 
 	err = t.waitForSnapshotDeleted(t.namespace.Name, vs.Name, 5*time.Second, 5*time.Minute)
 	framework.ExpectNoError(err)
 }
 
-func (t *TestVolumeSnapshotClass) DeleteVolumeSnapshotContent(vsc *volumesnapshotv1.VolumeSnapshotContent) {
+func (t *TestVolumeSnapshotClass) DeleteVolumeSnapshotContent(vsc *v1beta1.VolumeSnapshotContent) {
 	By("deleting a VolumeSnapshotContent " + vsc.Name)
-	snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshotContents().Delete(context.TODO(), vsc.Name, metav1.DeleteOptions{})
+	snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshotContents().Delete(context.TODO(), vsc.Name, metav1.DeleteOptions{})
 
 	err := t.waitForVolumeSnapshotContentDeleted(vsc.Name, 5*time.Second, 5*time.Minute)
 	framework.ExpectNoError(err)
@@ -222,13 +221,13 @@ func (t *TestVolumeSnapshotClass) DeleteVolumeSnapshotContent(vsc *volumesnapsho
 
 func (t *TestVolumeSnapshotClass) Cleanup() {
 	e2elog.Logf("deleting VolumeSnapshotClass %s", t.volumeSnapshotClass.Name)
-	err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshotClasses().Delete(context.TODO(), t.volumeSnapshotClass.Name, metav1.DeleteOptions{})
+	err := snapshotclientset.New(t.client).SnapshotV1beta1().VolumeSnapshotClasses().Delete(context.TODO(), t.volumeSnapshotClass.Name, metav1.DeleteOptions{})
 	framework.ExpectNoError(err)
 }
 
 func (t *TestVolumeSnapshotClass) waitForSnapshotDeleted(ns string, snapshotName string, poll, timeout time.Duration) error {
 	e2elog.Logf("Waiting up to %v for VolumeSnapshot %s to be removed", timeout, snapshotName)
-	c := snapshotclientset.New(t.client).SnapshotV1()
+	c := snapshotclientset.New(t.client).SnapshotV1beta1()
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(poll) {
 		_, err := c.VolumeSnapshots(ns).Get(context.TODO(), snapshotName, metav1.GetOptions{})
 		if err != nil {
@@ -244,7 +243,7 @@ func (t *TestVolumeSnapshotClass) waitForSnapshotDeleted(ns string, snapshotName
 
 func (t *TestVolumeSnapshotClass) waitForVolumeSnapshotContentDeleted(vscName string, poll, timeout time.Duration) error {
 	e2elog.Logf("Waiting up to %v for VolumeSnapshotContent %s to be removed", timeout, vscName)
-	c := snapshotclientset.New(t.client).SnapshotV1()
+	c := snapshotclientset.New(t.client).SnapshotV1beta1()
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(poll) {
 		_, err := c.VolumeSnapshotContents().Get(context.TODO(), vscName, metav1.GetOptions{})
 		if err != nil {

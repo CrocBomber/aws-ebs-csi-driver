@@ -27,7 +27,7 @@ import (
 
 	diskapi "github.com/kubernetes-csi/csi-proxy/client/api/disk/v1"
 	diskclient "github.com/kubernetes-csi/csi-proxy/client/groups/disk/v1"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/mounter"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/mounter"
 	"k8s.io/klog"
 )
 

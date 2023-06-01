@@ -17,8 +17,8 @@ package driver
 import (
 	"fmt"
 
-	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	v1beta1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	ebscsidriver "github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -62,7 +62,7 @@ func (d *ebsCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]str
 	return getStorageClass(generateName, provisioner, parameters, mountOptions, reclaimPolicy, volumeExpansion, bindingMode, allowedTopologies)
 }
 
-func (d *ebsCSIDriver) GetVolumeSnapshotClass(namespace string) *volumesnapshotv1.VolumeSnapshotClass {
+func (d *ebsCSIDriver) GetVolumeSnapshotClass(namespace string) *v1beta1.VolumeSnapshotClass {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-dynamic-sc-", namespace, provisioner)
 	return getVolumeSnapshotClass(generateName, provisioner)
@@ -126,16 +126,10 @@ func GetParameters(volumeType string, fsType string, encrypted bool) map[string]
 // MinimumSizeForVolumeType returns the minimum disk size for each volumeType
 func MinimumSizeForVolumeType(volumeType string) string {
 	switch volumeType {
-	case "st1", "sc1":
-		return "500Gi"
-	case "gp2", "gp3":
-		return "1Gi"
-	case "io1", "io2":
-		return "4Gi"
-	case "standard":
-		return "10Gi"
+	case "st2":
+		return "32Gi"
 	default:
-		return "1Gi"
+		return "8Gi"
 	}
 }
 
@@ -147,8 +141,8 @@ func IOPSPerGBForVolumeType(volumeType string) string {
 		// Maximum IOPS/GB for io1 is 50
 		return "50"
 	case "io2":
-		// Maximum IOPS/GB for io2 is 500
-		return "500"
+		// Maximum IOPS/GB for io2 is 50
+		return "50"
 	default:
 		return ""
 	}

@@ -26,9 +26,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/arn"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver/internal"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver/internal"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
@@ -468,7 +468,7 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
 	}
 
-	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+	actualSizeGiB, err := d.cloud.ResizeDiskC2(ctx, volumeID, newSize)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
 	}

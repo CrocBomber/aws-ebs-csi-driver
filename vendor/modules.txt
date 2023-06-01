@@ -60,8 +60,6 @@ github.com/davecgh/go-spew/spew
 # github.com/docker/distribution v2.7.1+incompatible
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
-# github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a
-## explicit
 # github.com/evanphx/json-patch v4.9.0+incompatible
 github.com/evanphx/json-patch
 # github.com/go-logr/logr v0.4.0

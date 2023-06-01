@@ -20,8 +20,8 @@ import (
 	"flag"
 	"net/http"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	"k8s.io/component-base/metrics/legacyregistry"
 
 	"k8s.io/klog"

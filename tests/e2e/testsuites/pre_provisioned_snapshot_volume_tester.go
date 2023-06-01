@@ -16,14 +16,14 @@ package testsuites
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	k8srestclient "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/test/e2e/framework"
 
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 
 	. "github.com/onsi/ginkgo"
 )

@@ -16,7 +16,7 @@ package testsuites
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
 	"k8s.io/kubernetes/test/e2e/framework"
 
 	"k8s.io/api/core/v1"
