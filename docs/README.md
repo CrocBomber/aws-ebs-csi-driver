@@ -12,6 +12,7 @@ The [Amazon Elastic Block Store](https://aws.amazon.com/ebs/) Container Storage 
 | AWS EBS CSI Driver \ CSI Version       | v0.3.0| v1.0.0 | v1.1.0 |
 |----------------------------------------|-------|--------|--------|
 | master branch                          | no    | no     | yes    |
+| v1.2.0                                 | no    | no     | yes    |
 | v1.1.x                                 | no    | no     | yes    |
 | v1.0.0                                 | no    | no     | yes    |
 | v0.10.x                                | no    | no     | yes    |
@@ -75,10 +76,11 @@ There are couple driver options that can be passed as arguments when starting dr
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compatibility Matrix
-| AWS EBS CSI Driver \ Kubernetes Version| v1.12 | v1.13 | v1.14 | v1.15 | v1.16 | v1.17 | v1.18+ |
+| AWS EBS CSI Driver \ Kubernetes Version| v1.12 | v1.13 | v1.14 | v1.15 | v1.16 | v1.17 | v1.18+|
 |----------------------------------------|-------|-------|-------|-------|-------|-------|-------|
 | master branch                          | no    | no+   | no    | no    | no    | yes   | yes   |
-| v1.1.0                                 | no    | no+   | no    | no    | no    | yes   | yes   |
+| v1.2.x                                 | no    | no+   | no    | no    | no    | yes   | yes   |
+| v1.1.x                                 | no    | no+   | no    | no    | no    | yes   | yes   |
 | v1.0.0                                 | no    | no+   | no    | no    | no    | yes   | yes   |
 | v0.10.x                                | no    | no+   | no    | no    | no    | yes   | yes   |
 | v0.9.x                                 | no    | no+   | no    | no    | no    | yes   | yes   |
@@ -94,23 +96,29 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 **Note**: for the entry with `+` sign, it means the driver's default released manifest doesn't work with corresponding Kubernetes version, but the driver container image is compatiable with the Kubernetes version if an older version's manifest is used.
 
 ## Container Images:
-|AWS EBS CSI Driver Version | Image                                            |
-|---------------------------|--------------------------------------------------|
-|v1.1.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.1 |
-|v1.1.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.0 |
-|v1.0.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.0.0 |
-|v0.10.1                    |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.10.1|
-|v0.10.0                    |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.10.0|
-|v0.9.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.9.1 |
-|v0.9.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.9.0 |
-|v0.8.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.8.1 |
-|v0.7.1                     |amazon/aws-ebs-csi-driver:v0.7.1                  |
-|v0.6.0                     |amazon/aws-ebs-csi-driver:v0.6.0                  |
-|v0.5.0                     |amazon/aws-ebs-csi-driver:v0.5.0                  |
-|v0.4.0                     |amazon/aws-ebs-csi-driver:v0.4.0                  |
-|v0.3.0                     |amazon/aws-ebs-csi-driver:v0.3.0                  |
-|v0.2.0                     |amazon/aws-ebs-csi-driver:0.2.0                   |
-|v0.1.0                     |amazon/aws-ebs-csi-driver:0.1.0-alpha             |
+|AWS EBS CSI Driver Version | GCR Image                                        | ECR Image                                                                   |
+|---------------------------|--------------------------------------------------|-----------------------------------------------------------------------------|
+|v1.2.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.2.1 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v1.2.1  |
+|v1.2.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.2.0 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v1.2.0  |
+|v1.1.3                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.3 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v1.1.3  |
+|v1.1.2                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.2 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v1.1.2  |
+|v1.1.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.1 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v1.1.1  |
+|v1.1.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.1.0 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v1.1.0  |
+|v1.0.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v1.0.0 |                                                                             |
+|v0.10.1                    |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.10.1| 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v0.10.1 |
+|v0.10.0                    |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.10.0|                                                                             |
+|v0.9.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.9.1 |                                                                             |
+|v0.9.0                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.9.0 | 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver:v0.9.0  |
+|v0.8.1                     |k8s.gcr.io/provider-aws/aws-ebs-csi-driver:v0.8.1 |                                                                             |
+|v0.7.1                     |                                                  | amazon/aws-ebs-csi-driver:v0.7.1                                            |
+|v0.6.0                     |                                                  | amazon/aws-ebs-csi-driver:v0.6.0                                            |
+|v0.5.0                     |                                                  | amazon/aws-ebs-csi-driver:v0.5.0                                            |
+|v0.4.0                     |                                                  | amazon/aws-ebs-csi-driver:v0.4.0                                            |
+|v0.3.0                     |                                                  | amazon/aws-ebs-csi-driver:v0.3.0                                            |
+|v0.2.0                     |                                                  | amazon/aws-ebs-csi-driver:0.2.0                                             |
+|v0.1.0                     |                                                  | amazon/aws-ebs-csi-driver:0.1.0-alpha                                       |
+
+**Note**: If your cluster isn't in the `us-west-2` Region, please change `602401143452.dkr.ecr.us-west-2.amazonaws.com` to the [address](https://github.com/awsdocs/amazon-eks-user-guide/blob/master/doc_source/add-ons-images.md) that corresponds to your Region.
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing EBS volumes, then create persistence volume (PV) from the EBS volume and consume the PV from container using persistence volume claim (PVC).
@@ -149,7 +157,7 @@ Please see the compatibility matrix above before you deploy the driver
 
 To deploy the CSI driver:
 ```sh
-kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.1"
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.2"
 ```
 
 Verify driver is running:

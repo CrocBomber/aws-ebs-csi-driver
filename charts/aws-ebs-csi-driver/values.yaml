@@ -4,7 +4,7 @@
 
 image:
   repository: k8s.gcr.io/provider-aws/aws-ebs-csi-driver
-  tag: "v1.1.1"
+  tag: "v1.2.0"
   pullPolicy: IfNotPresent
 
 sidecars:
@@ -130,6 +130,7 @@ node:
     create: true
     name: ebs-csi-node-sa
     annotations: {}
+  enableWindows: false
   # The "maximum number of attachable volumes" per node
   volumeAttachLimit:
 
