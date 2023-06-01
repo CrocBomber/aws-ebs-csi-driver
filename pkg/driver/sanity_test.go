@@ -1,9 +1,11 @@
+//go:build linux
+// +build linux
+
 package driver
 
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -16,12 +18,12 @@ import (
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver/internal"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/mount-utils"
-	"k8s.io/utils/exec"
+	mount_utils "k8s.io/mount-utils"
 )
 
 func TestSanity(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err := ioutil.TempDir("", "sanity-ebs-csi")
+	dir, err := os.MkdirTemp("", "sanity-ebs-csi")
 	if err != nil {
 		t.Fatalf("error creating directory %v", err)
 	}
@@ -57,9 +59,10 @@ func TestSanity(t *testing.T) {
 				Region:           "region",
 				AvailabilityZone: "az",
 			},
-			mounter:       newFakeMounter(),
-			inFlight:      internal.NewInFlight(),
-			driverOptions: &DriverOptions{},
+			mounter:          newFakeMounter(),
+			deviceIdentifier: newNodeDeviceIdentifier(),
+			inFlight:         internal.NewInFlight(),
+			driverOptions:    &DriverOptions{},
 		},
 	}
 	defer func() {
@@ -96,7 +99,10 @@ type fakeCloudProvider struct {
 
 type fakeDisk struct {
 	*cloud.Disk
-	tags map[string]string
+	iops       int
+	throughput int
+	volumeType string
+	tags       map[string]string
 }
 
 type fakeSnapshot struct {
@@ -120,6 +126,14 @@ func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, d
 			return nil, cloud.ErrNotFound
 		}
 	}
+	if existingDisk, ok := c.disks[volumeName]; ok {
+		//Already Created volume
+		if existingDisk.Disk.CapacityGiB != util.BytesToGiB(diskOptions.CapacityBytes) {
+			return nil, cloud.ErrIdempotentParameterMismatch
+		} else {
+			return existingDisk.Disk, nil
+		}
+	}
 	d := &fakeDisk{
 		Disk: &cloud.Disk{
 			VolumeID:         fmt.Sprintf("vol-%d", r1.Uint64()),
@@ -127,10 +141,24 @@ func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, d
 			AvailabilityZone: diskOptions.AvailabilityZone,
 			SnapshotID:       diskOptions.SnapshotID,
 		},
-		tags: diskOptions.Tags,
+		iops:       diskOptions.IOPS,
+		throughput: diskOptions.Throughput,
+		volumeType: diskOptions.VolumeType,
+		tags:       diskOptions.Tags,
 	}
 	c.disks[volumeName] = d
 	return d.Disk, nil
+}
+
+func (c *fakeCloudProvider) ModifyDisk(ctx context.Context, volumeID string, options *cloud.ModifyDiskOptions) error {
+	if d, ok := c.disks[volumeID]; !ok {
+		return cloud.ErrNotFound
+	} else {
+		d.iops = options.IOPS
+		d.throughput = options.Throughput
+		d.volumeType = options.VolumeType
+	}
+	return nil
 }
 
 func (c *fakeCloudProvider) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
@@ -248,6 +276,10 @@ func (c *fakeCloudProvider) GetSnapshotByID(ctx context.Context, snapshotID stri
 	return ret.Snapshot, nil
 }
 
+func (c *fakeCloudProvider) AvailabilityZones(ctx context.Context) (map[string]struct{}, error) {
+	return nil, nil
+}
+
 func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *cloud.ListSnapshotsResponse, err error) {
 	var snapshots []*cloud.Snapshot
 	var retToken string
@@ -273,6 +305,10 @@ func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, 
 
 }
 
+func (c *fakeCloudProvider) EnableFastSnapshotRestores(ctx context.Context, availabilityZones []string, snapshotID string) (*ec2.EnableFastSnapshotRestoresOutput, error) {
+	return nil, nil
+}
+
 func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, newSize int64) (int64, error) {
 	for volName, f := range c.disks {
 		if f.Disk.VolumeID == volumeID {
@@ -284,13 +320,19 @@ func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, new
 }
 
 type fakeMounter struct {
-	exec.Interface
+	mount_utils.Interface
 }
 
 func newFakeMounter() *fakeMounter {
-	return &fakeMounter{
-		exec.New(),
-	}
+	return &fakeMounter{}
+}
+
+func (f *fakeMounter) IsCorruptedMnt(err error) bool {
+	return false
+}
+
+func (f *fakeMounter) IsMountPoint(file string) (bool, error) {
+	return false, nil
 }
 
 func (f *fakeMounter) Mount(source string, target string, fstype string, options []string) error {
@@ -305,8 +347,24 @@ func (f *fakeMounter) MountSensitiveWithoutSystemd(source string, target string,
 	return nil
 }
 
+func (f *fakeMounter) MountSensitiveWithoutSystemdWithMountFlags(source string, target string, fstype string, options []string, sensitiveOptions []string, mountFlags []string) error {
+	return nil
+}
+
 func (f *fakeMounter) Unmount(target string) error {
 	return nil
+}
+
+func (f *fakeMounter) Unstage(target string) error {
+	return nil
+}
+
+func (f *fakeMounter) Unpublish(target string) error {
+	return nil
+}
+
+func (f *fakeMounter) NewResizeFs() (Resizefs, error) {
+	return nil, nil
 }
 
 func (f *fakeMounter) List() ([]mount.MountPoint, error) {
@@ -321,7 +379,7 @@ func (f *fakeMounter) GetMountRefs(pathname string) ([]string, error) {
 	return []string{}, nil
 }
 
-func (f *fakeMounter) FormatAndMount(source string, target string, fstype string, options []string) error {
+func (f *fakeMounter) FormatAndMountSensitiveWithFormatOptions(source string, target string, fstype string, options []string, sensitiveOptions []string, formatOptions []string) error {
 	return nil
 }
 

@@ -1,22 +1,18 @@
 approvers:
-- bertinatto
-- jsafrane
-- gnufied
-- ddebroy
-- d-nishi
-- leakingtapan
-- wongma7
-- ayberk
 - AndyXiangLi
-- vdhanan
+- bertinatto
+- ConnorJC3
+- gnufied
+- gtxu
+- hanyuel
+- jsafrane
+- leakingtapan
+- rdpsin
+- torredil
+- wongma7
 reviewers:
-- bertinatto
-- jsafrane
-- gnufied
-- ddebroy
-- d-nishi
-- leakingtapan
-- wongma7
-- ayberk
-- AndyXiangLi
-- vdhanan
+- ConnorJC3
+- gtxu
+- hanyuel
+- rdpsin
+- torredil

@@ -29,9 +29,10 @@ import (
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -84,7 +85,7 @@ type CSIClient struct {
 
 func newCSIClient() (*CSIClient, error) {
 	opts := []grpc.DialOption{
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithContextDialer(
 			func(context.Context, string) (net.Conn, error) {
@@ -111,7 +112,7 @@ func newMetadata() (cloud.MetadataService, error) {
 		return nil, err
 	}
 
-	return cloud.NewMetadataService(func() (cloud.EC2Metadata, error) { return ec2metadata.New(s), nil }, func() (kubernetes.Interface, error) { return fake.NewSimpleClientset(), nil })
+	return cloud.NewMetadataService(func() (cloud.EC2Metadata, error) { return ec2metadata.New(s), nil }, func() (kubernetes.Interface, error) { return fake.NewSimpleClientset(), nil }, "")
 }
 
 func newEC2Client() (*ec2.EC2, error) {

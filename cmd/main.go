@@ -17,18 +17,26 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"net/http"
+
+	flag "github.com/spf13/pflag"
 
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	logsapi "k8s.io/component-base/logs/api/v1"
+	json "k8s.io/component-base/logs/json"
 	"k8s.io/component-base/metrics/legacyregistry"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func main() {
 	fs := flag.NewFlagSet("aws-ebs-csi-driver", flag.ExitOnError)
+
+	if err := logsapi.RegisterLogFormat(logsapi.JSONLogFormat, json.Factory{}, logsapi.LoggingBetaOptions); err != nil {
+		klog.ErrorS(err, "failed to register JSON log format")
+	}
+
 	options := GetOptions(fs)
 
 	cloud.RegisterMetrics()
@@ -38,7 +46,8 @@ func main() {
 		go func() {
 			err := http.ListenAndServe(options.ServerOptions.HttpEndpoint, mux)
 			if err != nil {
-				klog.Fatalf("failed to listen & serve metrics from %q: %v", options.ServerOptions.HttpEndpoint, err)
+				klog.ErrorS(err, "failed to listen & serve metrics", "endpoint", options.ServerOptions.HttpEndpoint)
+				klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 			}
 		}()
 	}
@@ -51,11 +60,15 @@ func main() {
 		driver.WithVolumeAttachLimit(options.NodeOptions.VolumeAttachLimit),
 		driver.WithKubernetesClusterID(options.ControllerOptions.KubernetesClusterID),
 		driver.WithAwsSdkDebugLog(options.ControllerOptions.AwsSdkDebugLog),
+		driver.WithWarnOnInvalidTag(options.ControllerOptions.WarnOnInvalidTag),
+		driver.WithUserAgentExtra(options.ControllerOptions.UserAgentExtra),
 	)
 	if err != nil {
-		klog.Fatalln(err)
+		klog.ErrorS(err, "failed to create driver")
+		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 	if err := drv.Run(); err != nil {
-		klog.Fatalln(err)
+		klog.ErrorS(err, "failed to run driver")
+		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
 	}
 }

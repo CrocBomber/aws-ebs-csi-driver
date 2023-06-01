@@ -25,7 +25,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/golang/mock/gomock"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/mocks"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,11 +34,13 @@ import (
 )
 
 const (
-	nodeName            = "ip-123-45-67-890.us-west-2.compute.internal"
-	stdInstanceID       = "i-abcdefgh123456789"
-	stdInstanceType     = "t2.medium"
-	stdRegion           = "us-west-2"
-	stdAvailabilityZone = "us-west-2b"
+	nodeName             = "ip-123-45-67-890.us-west-2.compute.internal"
+	stdInstanceID        = "i-abcdefgh123456789"
+	stdInstanceType      = "t2.medium"
+	stdRegion            = "us-west-2"
+	stdAvailabilityZone  = "us-west-2b"
+	snowRegion           = "snow"
+	snowAvailabilityZone = "snow"
 )
 
 func TestNewMetadataService(t *testing.T) {
@@ -56,10 +57,15 @@ func TestNewMetadataService(t *testing.T) {
 		invalidInstanceIdentityDocument  bool
 		getMetadataValue                 string
 		getMetadataError                 error
+		imdsBlockDeviceOutput            string
+		imdsENIOutput                    string
+		expectedENIs                     int
+		expectedBlockDevices             int
 		expectedOutpostArn               arn.ARN
 		expectedErr                      error
 		node                             v1.Node
 		nodeNameEnvVar                   string
+		regionFromSession                string
 	}{
 		{
 			name:                 "success: normal",
@@ -70,6 +76,8 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
+			imdsENIOutput: "00:00:00:00:00:00",
+			expectedENIs:  1,
 		},
 		{
 			name:                 "success: outpost-arn is available",
@@ -82,6 +90,8 @@ func TestNewMetadataService(t *testing.T) {
 			},
 			getMetadataValue:   validRawOutpostArn,
 			expectedOutpostArn: validOutpostArn,
+			imdsENIOutput:      "00:00:00:00:00:00",
+			expectedENIs:       1,
 		},
 		{
 			name:                 "success: outpost-arn is invalid",
@@ -93,6 +103,8 @@ func TestNewMetadataService(t *testing.T) {
 				AvailabilityZone: stdAvailabilityZone,
 			},
 			getMetadataValue: "foo",
+			imdsENIOutput:    "00:00:00:00:00:00",
+			expectedENIs:     1,
 		},
 		{
 			name:                 "success: outpost-arn is not found",
@@ -104,6 +116,8 @@ func TestNewMetadataService(t *testing.T) {
 				AvailabilityZone: stdAvailabilityZone,
 			},
 			getMetadataError: fmt.Errorf("404"),
+			imdsENIOutput:    "00:00:00:00:00:00",
+			expectedENIs:     1,
 		},
 		{
 			name:                 "success: metadata not available, used k8s api",
@@ -114,6 +128,11 @@ func TestNewMetadataService(t *testing.T) {
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node.kubernetes.io/instance-type": stdInstanceType,
+						"topology.kubernetes.io/region":    stdRegion,
+						"topology.kubernetes.io/zone":      stdAvailabilityZone,
+					},
 					Name: nodeName,
 				},
 				Spec: v1.NodeSpec{
@@ -121,6 +140,7 @@ func TestNewMetadataService(t *testing.T) {
 				},
 				Status: v1.NodeStatus{},
 			},
+			expectedENIs:   1,
 			nodeNameEnvVar: nodeName,
 		},
 		{
@@ -161,38 +181,46 @@ func TestNewMetadataService(t *testing.T) {
 			nodeNameEnvVar: nodeName,
 		},
 		{
-			name:                 "failure: metadata not available, invalid region",
+			name:                 "failure: metadata not available, could not retrieve region",
 			ec2metadataAvailable: false,
-			expectedErr:          fmt.Errorf("did not find aws region in node providerID string"),
+			expectedErr:          fmt.Errorf("could not retrieve region from topology label"),
 			node: v1.Node{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Node",
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node.kubernetes.io/instance-type": stdInstanceType,
+						"topology.kubernetes.io/zone":      stdAvailabilityZone,
+					},
 					Name: nodeName,
 				},
 				Spec: v1.NodeSpec{
-					ProviderID: "aws:///us-est-2b/i-abcdefgh123456789", // invalid region
+					ProviderID: "aws:///" + stdAvailabilityZone + "/" + stdInstanceID,
 				},
 				Status: v1.NodeStatus{},
 			},
 			nodeNameEnvVar: nodeName,
 		},
 		{
-			name:                 "failure: metadata not available, invalid az",
+			name:                 "failure: metadata not available, could not retrieve AZ",
 			ec2metadataAvailable: false,
-			expectedErr:          fmt.Errorf("did not find aws availability zone in node providerID string"),
+			expectedErr:          fmt.Errorf("could not retrieve AZ from topology label"),
 			node: v1.Node{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Node",
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node.kubernetes.io/instance-type": stdInstanceType,
+						"topology.kubernetes.io/region":    stdRegion,
+					},
 					Name: nodeName,
 				},
 				Spec: v1.NodeSpec{
-					ProviderID: "aws:///us-west-21/i-abcdefgh123456789", // invalid AZ
+					ProviderID: "aws:///" + stdAvailabilityZone + "/" + stdInstanceID,
 				},
 				Status: v1.NodeStatus{},
 			},
@@ -208,6 +236,11 @@ func TestNewMetadataService(t *testing.T) {
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node.kubernetes.io/instance-type": stdInstanceType,
+						"topology.kubernetes.io/region":    stdRegion,
+						"topology.kubernetes.io/zone":      stdAvailabilityZone,
+					},
 					Name: nodeName,
 				},
 				Spec: v1.NodeSpec{
@@ -268,8 +301,50 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
+			imdsENIOutput:    "00:00:00:00:00:00",
+			expectedENIs:     1,
 			getMetadataError: fmt.Errorf("405"),
 			expectedErr:      fmt.Errorf("something went wrong while getting EC2 outpost arn: 405"),
+		},
+		{
+			name:                 "success: GetMetadata() returns correct number of ENIs",
+			ec2metadataAvailable: true,
+			getInstanceIdentityDocumentValue: ec2metadata.EC2InstanceIdentityDocument{
+				InstanceID:       stdInstanceID,
+				InstanceType:     stdInstanceType,
+				Region:           stdRegion,
+				AvailabilityZone: stdAvailabilityZone,
+			},
+			imdsENIOutput: "00:00:00:00:00:00\n00:00:00:00:00:01",
+			expectedENIs:  2,
+		},
+		{
+			name:                 "success: GetMetadata() returns correct number of block device mappings",
+			ec2metadataAvailable: true,
+			getInstanceIdentityDocumentValue: ec2metadata.EC2InstanceIdentityDocument{
+				InstanceID:       stdInstanceID,
+				InstanceType:     stdInstanceType,
+				Region:           stdRegion,
+				AvailabilityZone: stdAvailabilityZone,
+			},
+			imdsENIOutput:         "00:00:00:00:00:00",
+			expectedENIs:          1,
+			imdsBlockDeviceOutput: "ami\nroot\nebs1\nebs2",
+			expectedBlockDevices:  2,
+		},
+		{
+			name:                 "success: region from session is snow",
+			ec2metadataAvailable: true,
+			getInstanceIdentityDocumentValue: ec2metadata.EC2InstanceIdentityDocument{
+				InstanceID:       stdInstanceID,
+				InstanceType:     stdInstanceType,
+				Region:           "",
+				AvailabilityZone: "",
+			},
+			imdsENIOutput:        "00:00:00:00:00:00",
+			expectedENIs:         1,
+			regionFromSession:    snowRegion,
+			expectedBlockDevices: 0,
 		},
 	}
 
@@ -282,7 +357,7 @@ func TestNewMetadataService(t *testing.T) {
 			}
 
 			mockCtrl := gomock.NewController(t)
-			mockEC2Metadata := mocks.NewMockEC2Metadata(mockCtrl)
+			mockEC2Metadata := NewMockEC2Metadata(mockCtrl)
 
 			ec2MetadataClient := func() (EC2Metadata, error) { return mockEC2Metadata, nil }
 			k8sAPIClient := func() (kubernetes.Interface, error) { clientsetInitialized = true; return clientset, nil }
@@ -295,12 +370,17 @@ func TestNewMetadataService(t *testing.T) {
 				// GetInstanceIdentityDocument returns an error or (somehow?) partial
 				// output
 				if tc.getInstanceIdentityDocumentError == nil && !tc.invalidInstanceIdentityDocument {
+					mockEC2Metadata.EXPECT().GetMetadata(enisEndpoint).Return(tc.imdsENIOutput, nil)
+					mockEC2Metadata.EXPECT().GetMetadata(blockDevicesEndpoint).Return(tc.imdsBlockDeviceOutput, nil).AnyTimes()
+
 					if tc.getMetadataValue != "" || tc.getMetadataError != nil {
-						mockEC2Metadata.EXPECT().GetMetadata(OutpostArnEndpoint).Return(tc.getMetadataValue, tc.getMetadataError)
+						mockEC2Metadata.EXPECT().GetMetadata(outpostArnEndpoint).Return(tc.getMetadataValue, tc.getMetadataError)
+
 					} else {
-						mockEC2Metadata.EXPECT().GetMetadata(OutpostArnEndpoint).Return("", fmt.Errorf("404"))
+						mockEC2Metadata.EXPECT().GetMetadata(outpostArnEndpoint).Return("", fmt.Errorf("404"))
 					}
 				}
+
 				if clientsetInitialized == true {
 					t.Errorf("kubernetes client was unexpectedly initialized when metadata is available!")
 					if len(clientset.Actions()) > 0 {
@@ -310,8 +390,13 @@ func TestNewMetadataService(t *testing.T) {
 			}
 
 			os.Setenv("CSI_NODE_NAME", tc.nodeNameEnvVar)
-
-			m, err := NewMetadataService(ec2MetadataClient, k8sAPIClient)
+			var m MetadataService
+			var err error
+			if tc.regionFromSession == snowRegion {
+				m, err = NewMetadataService(ec2MetadataClient, k8sAPIClient, snowRegion)
+			} else {
+				m, err = NewMetadataService(ec2MetadataClient, k8sAPIClient, stdRegion)
+			}
 			if err != nil {
 				if tc.expectedErr == nil {
 					t.Errorf("got error %q, expected no error", err)
@@ -325,14 +410,23 @@ func TestNewMetadataService(t *testing.T) {
 				if m.GetInstanceID() != stdInstanceID {
 					t.Errorf("NewMetadataService() failed: got wrong instance ID %v, expected %v", m.GetInstanceID(), stdInstanceID)
 				}
-				if m.GetRegion() != stdRegion {
+				if m.GetInstanceType() != stdInstanceType {
+					t.Errorf("GetInstanceType() failed: got wrong instance type %v, expected %v", m.GetInstanceType(), stdInstanceType)
+				}
+				if m.GetRegion() != stdRegion && m.GetRegion() != snowRegion {
 					t.Errorf("NewMetadataService() failed: got wrong region %v, expected %v", m.GetRegion(), stdRegion)
 				}
-				if m.GetAvailabilityZone() != stdAvailabilityZone {
+				if m.GetAvailabilityZone() != stdAvailabilityZone && m.GetAvailabilityZone() != snowAvailabilityZone {
 					t.Errorf("NewMetadataService() failed: got wrong AZ %v, expected %v", m.GetAvailabilityZone(), stdAvailabilityZone)
 				}
 				if m.GetOutpostArn() != tc.expectedOutpostArn {
 					t.Errorf("GetOutpostArn() failed: got %v, expected %v", m.GetOutpostArn(), tc.expectedOutpostArn)
+				}
+				if m.GetNumAttachedENIs() != tc.expectedENIs {
+					t.Errorf("GetMetadata() failed for %s: got %v, expected %v", enisEndpoint, m.GetNumAttachedENIs(), tc.expectedENIs)
+				}
+				if m.GetNumBlockDeviceMappings() != tc.expectedBlockDevices {
+					t.Errorf("GetMetadata() failed for %s: got %v, expected %v", blockDevicesEndpoint, m.GetNumBlockDeviceMappings(), tc.expectedBlockDevices)
 				}
 			}
 			mockCtrl.Finish()

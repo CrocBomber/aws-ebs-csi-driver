@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 /*
@@ -20,7 +21,6 @@ package driver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -28,13 +28,12 @@ import (
 	diskapi "github.com/kubernetes-csi/csi-proxy/client/api/disk/v1"
 	diskclient "github.com/kubernetes-csi/csi-proxy/client/groups/disk/v1"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/mounter"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // findDevicePath finds disk number of device
 // https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-windows-volumes.html#list-nvme-powershell
 func (d *nodeService) findDevicePath(devicePath, volumeID, _ string) (string, error) {
-
 	diskClient, err := diskclient.NewClient()
 	if err != nil {
 		return "", fmt.Errorf("error creating csi-proxy disk client: %q", err)
@@ -70,7 +69,7 @@ func (d *nodeService) preparePublishTarget(target string) error {
 	// directory at target now. Otherwise mklink will error: "Cannot create a file when that file already exists".
 	// Instead, delete the target if it already exists (like if it was created by kubelet <1.20)
 	// https://github.com/kubernetes/kubernetes/pull/88759
-	klog.V(4).Infof("NodePublishVolume: removing dir %s", target)
+	klog.V(4).InfoS("NodePublishVolume: removing dir", "target", target)
 	exists, err := d.mounter.PathExists(target)
 	if err != nil {
 		return fmt.Errorf("error checking path %q exists: %v", target, err)
@@ -89,11 +88,22 @@ func (d *nodeService) preparePublishTarget(target string) error {
 	return nil
 }
 
-// IsBlock checks if the given path is a block device
+// IsBlockDevice checks if the given path is a block device
 func (d *nodeService) IsBlockDevice(fullPath string) (bool, error) {
-	return false, errors.New("unsupported")
+	return false, nil
 }
 
+// getBlockSizeBytes gets the size of the disk in bytes
 func (d *nodeService) getBlockSizeBytes(devicePath string) (int64, error) {
-	return 0, errors.New("unsupported")
+	proxyMounter, ok := (d.mounter.(*NodeMounter)).SafeFormatAndMount.Interface.(*mounter.CSIProxyMounter)
+	if !ok {
+		return -1, fmt.Errorf("failed to cast mounter to csi proxy mounter")
+	}
+
+	sizeInBytes, err := proxyMounter.GetDeviceSize(devicePath)
+	if err != nil {
+		return -1, err
+	}
+
+	return sizeInBytes, nil
 }
