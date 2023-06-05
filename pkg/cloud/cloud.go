@@ -19,8 +19,8 @@ package cloud
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -31,8 +31,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/awsutil"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -261,14 +261,13 @@ var _ Cloud = &cloud{}
 // This method is useful when you want to inject custom logic or configuration
 // into the SDK's request lifecycle. Such as custom headers, or retry logic.
 //
+//	// Example sending a request using the AttachVolumeRequest method.
+//	req, resp := client.AttachVolumeRequest(params)
 //
-//    // Example sending a request using the AttachVolumeRequest method.
-//    req, resp := client.AttachVolumeRequest(params)
-//
-//    err := req.Send()
-//    if err == nil { // resp is now filled
-//        fmt.Println(resp)
-//    }
+//	err := req.Send()
+//	if err == nil { // resp is now filled
+//	    fmt.Println(resp)
+//	}
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/AttachVolume
 func AttachVolumeRequest(c *ec2.EC2, input *AttachVolumeInput) (req *request.Request, output *ec2.VolumeAttachment) {
@@ -301,15 +300,15 @@ func AttachVolumeRequest(c *ec2.EC2, input *AttachVolumeInput) (req *request.Req
 //
 // If a volume has an AWS Marketplace product code:
 //
-//    * The volume can be attached only to a stopped instance.
+//   - The volume can be attached only to a stopped instance.
 //
-//    * AWS Marketplace product codes are copied from the volume to the instance.
+//   - AWS Marketplace product codes are copied from the volume to the instance.
 //
-//    * You must be subscribed to the product.
+//   - You must be subscribed to the product.
 //
-//    * The instance type and operating system of the instance must support
-//    the product. For example, you can't detach a volume from a Windows instance
-//    and attach it to a Linux instance.
+//   - The instance type and operating system of the instance must support
+//     the product. For example, you can't detach a volume from a Windows instance
+//     and attach it to a Linux instance.
 //
 // For more information, see Attaching Amazon EBS Volumes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-attaching-volume.html)
 // in the Amazon Elastic Compute Cloud User Guide.
