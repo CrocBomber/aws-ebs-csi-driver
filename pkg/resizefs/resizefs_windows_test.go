@@ -5,8 +5,8 @@ package resizefs
 
 import (
 	"errors"
-	"github.com/golang/mock/gomock"
 	"github.com/c2devel/aws-ebs-csi-driver/pkg/mounter"
+	"github.com/golang/mock/gomock"
 	"testing"
 )
 
