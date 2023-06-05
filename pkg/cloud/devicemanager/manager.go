@@ -18,7 +18,6 @@ package devicemanager
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -195,11 +194,6 @@ func (d *deviceManager) getVolumeIdsInUse(instance *ec2.Instance) []string {
 		if blockDevice.Ebs == nil {
 			continue
 		}
-
-		name := aws.StringValue(blockDevice.DeviceName)
-		// trim device prefix from name
-		name = strings.TrimPrefix(name, devPreffix)
-
 		inUse = append(inUse, *blockDevice.Ebs.VolumeId)
 	}
 
