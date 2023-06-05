@@ -436,7 +436,7 @@ func newEC2Cloud(region string, awsSdkDebugLog bool, userAgentExtra string) (Clo
 		var err error
 		isEndpointInsecure, err = strconv.ParseBool(envEndpointInsecure)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse environment variable AWS_EC2_ENDPOINT_UNSECURE: %v", err)
+			return nil, fmt.Errorf("Unable to parse environment variable AWS_EC2_ENDPOINT_UNSECURE: %w", err)
 		}
 	}
 
@@ -1459,7 +1459,7 @@ func (c *cloud) ResizeDiskC2(ctx context.Context, volumeID string, newSizeBytes 
 	klog.V(4).Infof("Expanding volume %q to size %d", volumeID, newSizeGiB)
 	_, err = c.ec2.ModifyVolumeWithContext(ctx, modifyVolumeReq)
 	if err != nil {
-		return 0, fmt.Errorf("could not modify C2 volume %q: %v", volumeID, err)
+		return 0, fmt.Errorf("could not modify C2 volume %q: %w", volumeID, err)
 	}
 
 	backoff := wait.Backoff{
