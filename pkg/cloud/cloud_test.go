@@ -514,7 +514,7 @@ func TestCreateDisk(t *testing.T) {
 				AvailabilityZone: defaultZone,
 			},
 			expCreateVolumeInput: &ec2.CreateVolumeInput{
-				Iops: aws.Int64(256000),
+				Iops: aws.Int64(150000),
 			},
 			expErr: nil,
 		},
@@ -525,7 +525,7 @@ func TestCreateDisk(t *testing.T) {
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test", AwsEbsDriverTagKey: "true"},
 				AvailabilityZone: snowZone,
-				VolumeType:       "sbp1",
+				VolumeType:       "gp2",
 			},
 			expCreateVolumeInput: &ec2.CreateVolumeInput{},
 			expDisk: &Disk{
@@ -542,7 +542,7 @@ func TestCreateDisk(t *testing.T) {
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test", AwsEbsDriverTagKey: "true"},
 				AvailabilityZone: snowZone,
-				VolumeType:       "sbg1",
+				VolumeType:       "st2",
 			},
 			expCreateVolumeInput: &ec2.CreateVolumeInput{},
 			expCreateTagsErr:     fmt.Errorf("CreateTags generic error"),
