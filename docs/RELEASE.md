@@ -4,7 +4,7 @@
 ```sh
 # uname -r
 5.6.13-100.fc30.x86_64
-# cat /etc/os-release 
+# cat /etc/os-release
 NAME=Fedora
 VERSION="30 (Thirty)"
 ID=fedora
@@ -48,6 +48,6 @@ kustomize build ./deployment/kubernetes/stable/ > ./deployment/kubernetes/stable
 - находясь в руте репы выполнить:
 ```docker build -t aws-ebs-csi-driver```
 - после успешной сборки протегировать имадж:
-```docker tag aws-ebs-csi-driver dhub.c2.croc.ru/kaas/aws-ebs-csi-driver:<version>```
+```docker tag aws-ebs-csi-driver registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:<version>```
 - запушить имадж в регистри (необходимы врайт права в регистри неймспейсе):
-```docker push dhub.c2.croc.ru/kaas/aws-ebs-csi-driver:<version>```
+```docker push registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:<version>```

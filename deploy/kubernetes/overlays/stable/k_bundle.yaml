@@ -374,7 +374,7 @@ spec:
               key: access_key
               name: aws-secret
               optional: true
-        image: dhub.c2.croc.ru/kaas/aws-ebs-csi-driver:v1.1.1-CROC4
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.1.1-CROC4
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
@@ -410,7 +410,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: dhub.c2.croc.ru/kaas/csi-provisioner:v2.1.1
+        image: registry.cloud.croc.ru/kaas/csi-provisioner:v2.1.1
         name: csi-provisioner
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -422,7 +422,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: dhub.c2.croc.ru/kaas/csi-attacher:v3.1.0
+        image: registry.cloud.croc.ru/kaas/csi-attacher:v3.1.0
         name: csi-attacher
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -433,7 +433,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: dhub.c2.croc.ru/kaas/csi-snapshotter:v3.0.3
+        image: registry.cloud.croc.ru/kaas/csi-snapshotter:v3.0.3
         name: csi-snapshotter
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -444,7 +444,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: dhub.c2.croc.ru/kaas/csi-resizer:v1.0.0
+        image: registry.cloud.croc.ru/kaas/csi-resizer:v1.0.0
         imagePullPolicy: Always
         name: csi-resizer
         volumeMounts:
@@ -452,7 +452,7 @@ spec:
           name: socket-dir
       - args:
         - --csi-address=/csi/csi.sock
-        image: dhub.c2.croc.ru/kaas/livenessprobe:v2.2.0
+        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.2.0
         name: liveness-probe
         volumeMounts:
         - mountPath: /csi
@@ -527,7 +527,7 @@ spec:
               fieldPath: spec.nodeName
         - name: AWS_REGION
           value: croc
-        image: dhub.c2.croc.ru/kaas/aws-ebs-csi-driver:v1.1.1-CROC4
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.1.1-CROC4
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -560,7 +560,7 @@ spec:
           value: /csi/csi.sock
         - name: DRIVER_REG_SOCK_PATH
           value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
-        image: dhub.c2.croc.ru/kaas/csi-node-driver-registrar:v2.1.0
+        image: registry.cloud.croc.ru/kaas/csi-node-driver-registrar:v2.1.0
         name: node-driver-registrar
         volumeMounts:
         - mountPath: /csi
@@ -569,7 +569,7 @@ spec:
           name: registration-dir
       - args:
         - --csi-address=/csi/csi.sock
-        image: dhub.c2.croc.ru/kaas/livenessprobe:v2.2.0
+        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.2.0
         name: liveness-probe
         volumeMounts:
         - mountPath: /csi
