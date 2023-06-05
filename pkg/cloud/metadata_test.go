@@ -106,10 +106,10 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			isAwsRegionEnvSet: false,
 			getMetadataValue:  "foo",
 			imdsENIOutput:     "00:00:00:00:00:00",
 			expectedENIs:      1,
+			isAwsRegionEnvSet: false,
 		},
 		{
 			name:                 "success: outpost-arn is not found",
@@ -452,7 +452,7 @@ func TestNewMetadataService(t *testing.T) {
 				if tc.isAwsRegionEnvSet && m.GetRegion() != envRegion {
 					t.Fatalf("GetRegion() failed: expected %v, got %v", envRegion, m.GetRegion())
 				}
-				if !tc.isAwsRegionEnvSet && m.GetRegion() != stdRegion {
+				if !tc.isAwsRegionEnvSet && tc.regionFromSession == "" && m.GetRegion() != stdRegion {
 					t.Fatalf("GetRegion() failed: expected %v, got %v", stdRegion, m.GetRegion())
 				}
 			}
