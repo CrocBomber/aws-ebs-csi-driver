@@ -26,11 +26,11 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/awslabs/volume-modifier-for-k8s/pkg/rpc"
-	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver/internal"
 	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
 	"github.com/c2devel/aws-ebs-csi-driver/pkg/util/template"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
