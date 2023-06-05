@@ -23,7 +23,7 @@ import (
 
 const (
 	VolumeSnapshotClassKind = "VolumeSnapshotClass"
-	SnapshotAPIVersion      = "snapshot.storage.k8s.io/v1beta1"
+	SnapshotAPIVersion      = "snapshot.storage.k8s.io/v1"
 )
 
 type PVTestDriver interface {

@@ -427,7 +427,6 @@ func NewCloud(region string, awsSdkDebugLog bool, userAgentExtra string) (Cloud,
 	return newEC2Cloud(region, awsSdkDebugLog, userAgentExtra)
 }
 
-
 func newEC2Cloud(region string, awsSdkDebugLog bool, userAgentExtra string) (Cloud, error) {
 
 	var awsConfig *aws.Config
@@ -1422,7 +1421,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	return c.checkDesiredSize(ctx, volumeID, newSizeGiB)
 }
 
-// ResizeDiskC2 resizes an EBS volume in C2 cloud. 
+// ResizeDiskC2 resizes an EBS volume in C2 cloud.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 //
 // ResizeDiskC2 is an adaptation of ResizeDisk function for C2 cloud. Differences:
@@ -1443,7 +1442,7 @@ func (c *cloud) ResizeDiskC2(ctx context.Context, volumeID string, newSizeBytes 
 	newSizeGiB := util.RoundUpGiB(newSizeBytes)
 	oldSizeGiB := aws.Int64Value(volume.Size)
 
-	// According to CSI spec: if a volume corresponding to the specified volume ID is already larger than 
+	// According to CSI spec: if a volume corresponding to the specified volume ID is already larger than
 	// or equal to the target capacity, the plugin should reply without errors.
 	if oldSizeGiB >= newSizeGiB {
 		klog.V(5).Infof("[Debug] Volume %q current size (%d GiB) is greater or equal to the new size (%d GiB)", volumeID, oldSizeGiB, newSizeGiB)
@@ -1452,7 +1451,7 @@ func (c *cloud) ResizeDiskC2(ctx context.Context, volumeID string, newSizeBytes 
 		newSizeGiB = oldSizeGiB
 		klog.V(4).Infof("Requested size value changed to current size value (%d GiB)", newSizeGiB)
 	}
-	
+
 	modifyVolumeReq := &ec2.ModifyVolumeInput{
 		VolumeId: aws.String(volumeID),
 		Size:     aws.Int64(newSizeGiB),
@@ -1470,14 +1469,14 @@ func (c *cloud) ResizeDiskC2(ctx context.Context, volumeID string, newSizeBytes 
 		Steps:    volumeModificationWaitSteps,
 	}
 
-	var actualSizeGiB int64 
+	var actualSizeGiB int64
 	waitErr := wait.ExponentialBackoff(backoff, func() (bool, error) {
-		
+
 		volume, err := c.getVolume(ctx, describeVolumesReq)
 		if err != nil {
 			return true, err
 		}
-	
+
 		oldSizeGiB := aws.Int64Value(volume.Size)
 		if oldSizeGiB >= newSizeGiB {
 			actualSizeGiB = oldSizeGiB

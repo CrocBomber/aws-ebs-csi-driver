@@ -1867,6 +1867,7 @@ func TestWaitForAttachmentState(t *testing.T) {
 			alreadyAssigned:  false,
 			expectError:      true,
 		},
+		// disabled, for Croc cloud purposes
 		// {
 		// 	name:             "failure: unexpected device",
 		// 	volumeID:         "vol-test-1234",
