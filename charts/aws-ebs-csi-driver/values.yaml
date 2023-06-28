@@ -188,7 +188,8 @@ controller:
   k8sTagClusterId:
   logLevel: 2
   userAgentExtra: "helm"
-  nodeSelector: {}
+  nodeSelector:
+    node-role.kubernetes.io/master: ""
   podAnnotations: {}
   podLabels: {}
   priorityClassName: system-cluster-critical
@@ -223,6 +224,7 @@ controller:
     - effect: NoExecute
       operator: Exists
       tolerationSeconds: 300
+    - operator: Exists
   # TSCs without the label selector stanza
   #
   # Example:
