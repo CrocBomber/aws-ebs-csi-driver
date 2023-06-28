@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION?=v1.20.0
+VERSION?=v1.20.0-CROC1
 
 PKG=github.com/c2devel/aws-ebs-csi-driver
 GIT_COMMIT?=$(shell git rev-parse HEAD)
