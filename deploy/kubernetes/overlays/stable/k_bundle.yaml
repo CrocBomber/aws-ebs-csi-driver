@@ -19,6 +19,21 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
+  name: ebs-csi-node-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
   name: ebs-external-attacher-role
 rules:
 - apiGroups:
@@ -235,13 +250,6 @@ rules:
   - update
   - patch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-- apiGroups:
   - snapshot.storage.k8s.io
   resources:
   - volumesnapshotclasses
@@ -260,6 +268,7 @@ rules:
   - watch
   - update
   - delete
+  - patch
 - apiGroups:
   - snapshot.storage.k8s.io
   resources:
@@ -280,6 +289,21 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: ebs-csi-controller-sa
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+  name: ebs-csi-node-getter-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ebs-csi-node-role
+subjects:
+- kind: ServiceAccount
+  name: ebs-csi-node-sa
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -340,16 +364,42 @@ spec:
     matchLabels:
       app: ebs-csi-controller
       app.kubernetes.io/name: aws-ebs-csi-driver
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: ebs-csi-controller
         app.kubernetes.io/name: aws-ebs-csi-driver
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: eks.amazonaws.com/compute-type
+                operator: NotIn
+                values:
+                - fargate
+            weight: 1
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ebs-csi-controller
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --endpoint=$(CSI_ENDPOINT)
-        - --logtostderr
+        - --logging-format=text
+        - --user-agent-extra=kustomize
         - --v=2
         env:
         - name: CSI_ENDPOINT
@@ -358,10 +408,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        - name: AWS_EC2_ENDPOINT
-          value: https://api.cloud.croc.ru
-        - name: AWS_REGION
-          value: croc
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
@@ -374,7 +420,12 @@ spec:
               key: access_key
               name: aws-secret
               optional: true
-        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.1.1-CROC4
+        - name: AWS_EC2_ENDPOINT
+          value: https://api.cloud.croc.ru
+        - name: AWS_REGION
+          value: croc
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.19.0-CROC1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
@@ -397,6 +448,15 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 3
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
           name: socket-dir
@@ -410,8 +470,19 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/csi-provisioner:v2.1.1
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/external-provisioner:v3.5.0-eks-1-27-3
+        imagePullPolicy: IfNotPresent
         name: csi-provisioner
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
           name: socket-dir
@@ -422,44 +493,94 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/csi-attacher:v3.1.0
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/external-attacher:v4.3.0-eks-1-27-3
+        imagePullPolicy: IfNotPresent
         name: csi-attacher
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
           name: socket-dir
       - args:
         - --csi-address=$(ADDRESS)
         - --leader-election=true
+        - --extra-create-metadata
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/csi-snapshotter:v3.0.3
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/csi-snapshotter:v6.2.1-eks-1-27-3
+        imagePullPolicy: IfNotPresent
         name: csi-snapshotter
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
           name: socket-dir
       - args:
         - --csi-address=$(ADDRESS)
         - --v=2
+        - --handle-volume-inuse-error=false
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/csi-resizer:v1.0.0
-        imagePullPolicy: Always
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/external-resizer:v1.8.0-eks-1-27-3
+        imagePullPolicy: IfNotPresent
         name: csi-resizer
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/pluginproxy/
           name: socket-dir
       - args:
         - --csi-address=/csi/csi.sock
-        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.2.0
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
+        imagePullPolicy: IfNotPresent
         name: liveness-probe
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /csi
           name: socket-dir
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
       serviceAccountName: ebs-csi-controller-sa
       tolerations:
       - key: CriticalAddonsOnly
@@ -471,7 +592,7 @@ spec:
       - emptyDir: {}
         name: socket-dir
 ---
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
@@ -516,7 +637,7 @@ spec:
       - args:
         - node
         - --endpoint=$(CSI_ENDPOINT)
-        - --logtostderr
+        - --logging-format=text
         - --v=2
         env:
         - name: CSI_ENDPOINT
@@ -527,7 +648,9 @@ spec:
               fieldPath: spec.nodeName
         - name: AWS_REGION
           value: croc
-        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.1.1-CROC4
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.19.0-CROC1
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -541,8 +664,15 @@ spec:
         - containerPort: 9808
           name: healthz
           protocol: TCP
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
         securityContext:
           privileged: true
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /var/lib/kubelet
           mountPropagation: Bidirectional
@@ -560,30 +690,64 @@ spec:
           value: /csi/csi.sock
         - name: DRIVER_REG_SOCK_PATH
           value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
-        image: registry.cloud.croc.ru/kaas/csi-node-driver-registrar:v2.1.0
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/node-driver-registrar:v2.8.0-eks-1-27-3
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - /csi-node-driver-registrar
+            - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+            - --mode=kubelet-registration-probe
+          initialDelaySeconds: 30
+          periodSeconds: 90
+          timeoutSeconds: 15
         name: node-driver-registrar
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
+        - mountPath: /var/lib/kubelet/plugins/ebs.csi.aws.com/
+          name: probe-dir
       - args:
         - --csi-address=/csi/csi.sock
-        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.2.0
+        envFrom: null
+        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
+        imagePullPolicy: IfNotPresent
         name: liveness-probe
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical
+      securityContext:
+        fsGroup: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
       serviceAccountName: ebs-csi-node-sa
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
-        tolerationSeconds: 300
+      - operator: Exists
       volumes:
       - hostPath:
           path: /var/lib/kubelet
@@ -601,6 +765,12 @@ spec:
           path: /dev
           type: Directory
         name: device-dir
+      - emptyDir: {}
+        name: probe-dir
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 10%
+    type: RollingUpdate
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
@@ -610,4 +780,5 @@ metadata:
   name: ebs.csi.aws.com
 spec:
   attachRequired: true
+  fsGroupPolicy: File
   podInfoOnMount: false
