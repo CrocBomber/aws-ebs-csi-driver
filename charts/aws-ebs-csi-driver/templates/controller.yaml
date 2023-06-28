@@ -119,11 +119,9 @@ spec:
                   optional: true
             {{- end }}
             - name: AWS_EC2_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: aws-meta
-                  key: endpoint
-                  optional: true
+              value: https://api.cloud.croc.ru
+            - name: AWS_REGION
+              value: croc
             {{- with .Values.controller.region }}
             - name: AWS_REGION
               value: {{ . }}
