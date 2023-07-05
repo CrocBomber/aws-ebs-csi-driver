@@ -3,7 +3,7 @@
 ## Prerequisites
 
 1. Kubernetes 1.13+ (CSI 1.0).
-2. The [aws-ebs-csi-driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver) installed.
+2. The [aws-ebs-csi-driver](https://github.com/c2devel/aws-ebs-csi-driver) installed.
 
 ## Usage
 

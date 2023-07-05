@@ -4,7 +4,7 @@
 package resizefs
 
 import (
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/mounter"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/mounter"
 	"k8s.io/klog/v2"
 )
 

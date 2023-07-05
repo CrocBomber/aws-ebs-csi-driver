@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/awslabs/volume-modifier-for-k8s/pkg/rpc"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog/v2"

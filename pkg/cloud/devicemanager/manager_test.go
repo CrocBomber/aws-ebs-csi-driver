@@ -103,30 +103,30 @@ func TestNewDeviceWithExistingDevice(t *testing.T) {
 		{
 			name:         "success: different volumes",
 			existingID:   "vol-1",
-			existingPath: "/dev/xvdaa",
+			existingPath: "/dev/disk/by-id/virtio-vol-1",
 			volumeID:     "vol-2",
-			expectedPath: "/dev/xvdab",
+			expectedPath: "/dev/disk/by-id/virtio-vol-2",
 		},
 		{
 			name:         "success: same volumes",
 			existingID:   "vol-1",
-			existingPath: "/dev/xvdcc",
+			existingPath: "/dev/disk/by-id/virtio-vol-1",
 			volumeID:     "vol-1",
-			expectedPath: "/dev/xvdcc",
+			expectedPath: "/dev/disk/by-id/virtio-vol-1",
 		},
 		{
 			name:         "success: same volumes with /dev/sdX path",
 			existingID:   "vol-3",
-			existingPath: "/dev/sdf",
+			existingPath: "/dev/disk/by-id/virtio-vol-3",
 			volumeID:     "vol-3",
-			expectedPath: "/dev/sdf",
+			expectedPath: "/dev/disk/by-id/virtio-vol-3",
 		},
 		{
 			name:         "success: same volumes with weird path",
 			existingID:   "vol-42",
-			existingPath: "/weird/path",
+			existingPath: "/dev/disk/by-id/virtio-vol-42",
 			volumeID:     "vol-42",
-			expectedPath: "/weird/path",
+			expectedPath: "/dev/disk/by-id/virtio-vol-42",
 		},
 	}
 	// Use a shared DeviceManager to make sure that there are no race conditions

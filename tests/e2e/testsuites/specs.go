@@ -17,7 +17,7 @@ package testsuites
 import (
 	"fmt"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
 
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -61,8 +61,8 @@ const (
 const (
 	VolumeSnapshotKind        = "VolumeSnapshot"
 	VolumeSnapshotContentKind = "VolumeSnapshotContent"
-	SnapshotAPIVersion        = "snapshot.storage.k8s.io/v1"
-	APIVersionv1              = "v1"
+	SnapshotAPIVersion        = "snapshot.storage.k8s.io/v1beta1"
+	APIVersionv1beta1         = "v1beta1"
 )
 
 var (

@@ -23,8 +23,8 @@ import (
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/cmd/options"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/cmd/options"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 
 	"k8s.io/component-base/featuregate"
 	logsapi "k8s.io/component-base/logs/api/v1"
