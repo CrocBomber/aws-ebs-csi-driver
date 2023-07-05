@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.16 AS builder
-WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+# See
+# https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope
+# for info on BUILDPLATFORM, TARGETOS, TARGETARCH, etc.
+FROM --platform=$BUILDPLATFORM golang:1.20 AS builder
+WORKDIR /go/src/github.com/c2devel/aws-ebs-csi-driver
+COPY go.* .
+ARG GOPROXY
+RUN go mod download
 COPY . .
-RUN make
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION
+RUN OS=$TARGETOS ARCH=$TARGETARCH make $TARGETOS/$TARGETARCH
 
-FROM amazonlinux:2 AS amazonlinux
-RUN yum install ca-certificates e2fsprogs xfsprogs util-linux -y
-COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
-
-ENTRYPOINT ["/bin/aws-ebs-csi-driver"]
-
-FROM k8s.gcr.io/build-image/debian-base:v2.1.3 AS debian-base
-RUN clean-install ca-certificates e2fsprogs mount udev util-linux xfsprogs
-COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
-
+FROM public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-csi-ebs:latest.2 AS linux-amazon
+COPY --from=builder /go/src/github.com/c2devel/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]

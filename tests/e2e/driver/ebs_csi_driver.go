@@ -17,8 +17,8 @@ package driver
 import (
 	"fmt"
 
+	ebscsidriver "github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -126,16 +126,10 @@ func GetParameters(volumeType string, fsType string, encrypted bool) map[string]
 // MinimumSizeForVolumeType returns the minimum disk size for each volumeType
 func MinimumSizeForVolumeType(volumeType string) string {
 	switch volumeType {
-	case "st1", "sc1":
-		return "500Gi"
-	case "gp2", "gp3":
-		return "1Gi"
-	case "io1", "io2":
-		return "4Gi"
-	case "standard":
-		return "10Gi"
+	case "st2":
+		return "32Gi"
 	default:
-		return "1Gi"
+		return "8Gi"
 	}
 }
 
@@ -147,8 +141,8 @@ func IOPSPerGBForVolumeType(volumeType string) string {
 		// Maximum IOPS/GB for io1 is 50
 		return "50"
 	case "io2":
-		// Maximum IOPS/GB for io2 is 500
-		return "500"
+		// Maximum IOPS/GB for io2 is 50
+		return "50"
 	default:
 		return ""
 	}
@@ -160,8 +154,9 @@ func IOPSForVolumeType(volumeType string) string {
 	switch volumeType {
 	case "gp3":
 		// Maximum IOPS for gp3 is 16000. However, maximum IOPS/GB for gp3 is 500.
-		// Since the tests will run using minimum volume capacity (1GB), set to 500.
-		return "500"
+		// Since the tests will run using minimum volume capacity (1GB), set to 3000
+		// because minimum IOPS for gp3 is 3000.
+		return "3000"
 	default:
 		return ""
 	}

@@ -17,7 +17,7 @@ limitations under the License.
 package options
 
 import (
-	"flag"
+	flag "github.com/spf13/pflag"
 
 	cliflag "k8s.io/component-base/cli/flag"
 )
@@ -35,6 +35,10 @@ type ControllerOptions struct {
 	KubernetesClusterID string
 	// flag to enable sdk debug log
 	AwsSdkDebugLog bool
+	// flag to warn on invalid tag, instead of returning an error
+	WarnOnInvalidTag bool
+	// flag to set user agent
+	UserAgentExtra string
 }
 
 func (s *ControllerOptions) AddFlags(fs *flag.FlagSet) {
@@ -42,4 +46,6 @@ func (s *ControllerOptions) AddFlags(fs *flag.FlagSet) {
 	fs.Var(cliflag.NewMapStringString(&s.ExtraVolumeTags), "extra-volume-tags", "DEPRECATED: Please use --extra-tags instead. Extra volume tags to attach to each dynamically provisioned volume. It is a comma separated list of key value pairs like '<key1>=<value1>,<key2>=<value2>'")
 	fs.StringVar(&s.KubernetesClusterID, "k8s-tag-cluster-id", "", "ID of the Kubernetes cluster used for tagging provisioned EBS volumes (optional).")
 	fs.BoolVar(&s.AwsSdkDebugLog, "aws-sdk-debug-log", false, "To enable the aws sdk debug log level (default to false).")
+	fs.BoolVar(&s.WarnOnInvalidTag, "warn-on-invalid-tag", false, "To warn on invalid tags, instead of returning an error")
+	fs.StringVar(&s.UserAgentExtra, "user-agent-extra", "", "Extra string appended to user agent.")
 }

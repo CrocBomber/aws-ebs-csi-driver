@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/awslabs/volume-modifier-for-k8s/pkg/rpc"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"google.golang.org/grpc"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // Mode is the operating mode of the CSI driver.
@@ -66,10 +67,12 @@ type DriverOptions struct {
 	volumeAttachLimit   int64
 	kubernetesClusterID string
 	awsSdkDebugLog      bool
+	warnOnInvalidTag    bool
+	userAgentExtra      string
 }
 
 func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
-	klog.V(4).Infof("Driver: %v Version: %v", DriverName, driverVersion)
+	klog.InfoS("Driver Information", "Driver", DriverName, "Version", driverVersion)
 
 	driverOptions := DriverOptions{
 		endpoint: DefaultCSIEndpoint,
@@ -80,7 +83,7 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 	}
 
 	if err := ValidateDriverOptions(&driverOptions); err != nil {
-		return nil, fmt.Errorf("Invalid driver options: %v", err)
+		return nil, fmt.Errorf("Invalid driver options: %w", err)
 	}
 
 	driver := Driver{
@@ -116,7 +119,7 @@ func (d *Driver) Run() error {
 	logErr := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		resp, err := handler(ctx, req)
 		if err != nil {
-			klog.Errorf("GRPC error: %v", err)
+			klog.ErrorS(err, "GRPC error")
 		}
 		return resp, err
 	}
@@ -130,16 +133,18 @@ func (d *Driver) Run() error {
 	switch d.options.mode {
 	case ControllerMode:
 		csi.RegisterControllerServer(d.srv, d)
+		rpc.RegisterModifyServer(d.srv, d)
 	case NodeMode:
 		csi.RegisterNodeServer(d.srv, d)
 	case AllMode:
 		csi.RegisterControllerServer(d.srv, d)
 		csi.RegisterNodeServer(d.srv, d)
+		rpc.RegisterModifyServer(d.srv, d)
 	default:
 		return fmt.Errorf("unknown mode: %s", d.options.mode)
 	}
 
-	klog.V(4).Infof("Listening for connections on address: %#v", listener.Addr())
+	klog.V(4).InfoS("Listening for connections", "address", listener.Addr())
 	return d.srv.Serve(listener)
 }
 
@@ -162,7 +167,7 @@ func WithExtraTags(extraTags map[string]string) func(*DriverOptions) {
 func WithExtraVolumeTags(extraVolumeTags map[string]string) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		if o.extraTags == nil && extraVolumeTags != nil {
-			klog.Warning("DEPRECATION WARNING: --extra-volume-tags is deprecated, please use --extra-tags instead")
+			klog.InfoS("DEPRECATION WARNING: --extra-volume-tags is deprecated, please use --extra-tags instead")
 			o.extraTags = extraVolumeTags
 		}
 	}
@@ -189,5 +194,17 @@ func WithKubernetesClusterID(clusterID string) func(*DriverOptions) {
 func WithAwsSdkDebugLog(enableSdkDebugLog bool) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.awsSdkDebugLog = enableSdkDebugLog
+	}
+}
+
+func WithWarnOnInvalidTag(warnOnInvalidTag bool) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.warnOnInvalidTag = warnOnInvalidTag
+	}
+}
+
+func WithUserAgentExtra(userAgentExtra string) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.userAgentExtra = userAgentExtra
 	}
 }

@@ -17,9 +17,9 @@ limitations under the License.
 package options
 
 import (
-	"flag"
+	flag "github.com/spf13/pflag"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 )
 
 // ServerOptions contains options and configuration settings for the driver server.

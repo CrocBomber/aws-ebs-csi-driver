@@ -5,7 +5,7 @@ ShortName: ebs
 StorageClass:
   FromFile: storageclass.yaml
 SnapshotClass:
-  FromFile: snapshotclass.yaml
+  FromName: true
 DriverInfo:
   Name: ebs.csi.aws.com
   SupportedSizeRange:
@@ -14,6 +14,7 @@ DriverInfo:
   SupportedFsType:
     xfs: {}
     ext4: {}
+    ntfs: {}
   SupportedMountOption:
     dirsync: {}
   TopologyKeys: ["topology.ebs.csi.aws.com/zone"]
@@ -29,3 +30,5 @@ DriverInfo:
     nodeExpansion: true
     volumeLimits: true
     topology: true
+Timeouts:
+  PodStart: 10m

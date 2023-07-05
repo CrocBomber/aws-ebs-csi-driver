@@ -68,6 +68,32 @@ const (
 	// PVNameKey contains name of the final PV that will be used for the dynamically
 	// provisioned volume
 	PVNameKey = "csi.storage.k8s.io/pv/name"
+
+	// VolumeSnapshotNameKey contains name of the snapshot
+	VolumeSnapshotNameKey = "csi.storage.k8s.io/volumesnapshot/name"
+
+	// VolumeSnapshotNamespaceKey contains namespace of the snapshot
+	VolumeSnapshotNamespaceKey = "csi.storage.k8s.io/volumesnapshot/namespace"
+
+	// VolumeSnapshotCotentNameKey contains name of the VolumeSnapshotContent that is the source
+	// for the snapshot
+	VolumeSnapshotContentNameKey = "csi.storage.k8s.io/volumesnapshotcontent/name"
+
+	// BlockExpressKey increases the iops limit for io2 volumes to the block express limit
+	BlockExpressKey = "blockexpress"
+
+	// BlockSizeKey configures the block size when formatting a volume
+	BlockSizeKey = "blocksize"
+
+	// TagKeyPrefix contains the prefix of a volume parameter that designates it as
+	// a tag to be attached to the resource
+	TagKeyPrefix = "tagSpecification"
+)
+
+// constants of keys in snapshot parameters
+const (
+	// FastSnapShotRestoreAvailabilityZones represents key for fast snapshot restore availability zones
+	FastSnapshotRestoreAvailabilityZones = "fastsnapshotrestoreavailabilityzones"
 )
 
 // constants for volume tags and their values
@@ -113,4 +139,37 @@ const (
 // constants for default command line flag values
 const (
 	DefaultCSIEndpoint = "unix://tmp/csi.sock"
+)
+
+// constants for disk block size
+const (
+	//DefaultBlockSize represents the default block size (4KB)
+	DefaultBlockSize = 4096
+)
+
+// constants for fstypes
+const (
+	// FSTypeExt2 represents the ext2 filesystem type
+	FSTypeExt2 = "ext2"
+	// FSTypeExt3 represents the ext3 filesystem type
+	FSTypeExt3 = "ext3"
+	// FSTypeExt4 represents the ext4 filesystem type
+	FSTypeExt4 = "ext4"
+	// FSTypeXfs represents the xfs filesystem type
+	FSTypeXfs = "xfs"
+	// FSTypeNtfs represents the ntfs filesystem type
+	FSTypeNtfs = "ntfs"
+)
+
+// BlockSizeExcludedFSTypes contains the filesystems that a custom block size is *NOT* supported on
+var (
+	BlockSizeExcludedFSTypes = map[string]struct{}{
+		FSTypeNtfs: {},
+	}
+)
+
+// constants for node k8s API use
+const (
+	// AgentNotReadyTaintKey contains the key of taints to be removed on driver startup
+	AgentNotReadyNodeTaintKey = "ebs.csi.aws.com/agent-not-ready"
 )

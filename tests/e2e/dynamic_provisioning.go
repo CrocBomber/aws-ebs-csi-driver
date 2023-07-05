@@ -20,25 +20,27 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	restclientset "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/test/e2e/framework"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/testsuites"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/testsuites"
 
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	ebscsidriver "github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	admissionapi "k8s.io/pod-security-admission/api"
 )
 
 var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs          clientset.Interface
@@ -138,23 +140,26 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	})
 
 	It("should create multiple PV objects, bind to PVCs and attach all to a single pod", func() {
+		volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "echo 'hello world' > /mnt/test-1/data && echo 'hello world' > /mnt/test-2/data && grep 'hello world' /mnt/test-1/data  && grep 'hello world' /mnt/test-2/data",
 				Volumes: []testsuites.VolumeDetails{
 					{
-						VolumeType: awscloud.VolumeTypeGP2,
-						FSType:     ebscsidriver.FSTypeExt3,
-						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeGP2),
+						VolumeType:        awscloud.VolumeTypeGP2,
+						FSType:            ebscsidriver.FSTypeExt3,
+						VolumeBindingMode: &volumeBindingMode,
+						ClaimSize:         driver.MinimumSizeForVolumeType(awscloud.VolumeTypeGP2),
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
 							MountPathGenerate: "/mnt/test-",
 						},
 					},
 					{
-						VolumeType: awscloud.VolumeTypeIO1,
-						FSType:     ebscsidriver.FSTypeExt4,
-						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO1),
+						VolumeType:        awscloud.VolumeTypeIO2,
+						FSType:            ebscsidriver.FSTypeExt4,
+						ClaimSize:         driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO2),
+						VolumeBindingMode: &volumeBindingMode,
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
 							MountPathGenerate: "/mnt/test-",
@@ -190,9 +195,9 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
 				Volumes: []testsuites.VolumeDetails{
 					{
-						VolumeType: awscloud.VolumeTypeIO1,
+						VolumeType: awscloud.VolumeTypeIO2,
 						FSType:     ebscsidriver.FSTypeExt4,
-						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO1),
+						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO2),
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
 							MountPathGenerate: "/mnt/test-",
@@ -234,25 +239,28 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	})
 
 	It("should create a raw block volume and a filesystem volume on demand and bind to the same pod", func() {
+		volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "dd if=/dev/zero of=/dev/xvda bs=1024k count=100 && echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
 				Volumes: []testsuites.VolumeDetails{
 					{
-						VolumeType: awscloud.VolumeTypeIO1,
-						FSType:     ebscsidriver.FSTypeExt4,
-						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO1),
+						VolumeType:        awscloud.VolumeTypeIO2,
+						FSType:            ebscsidriver.FSTypeExt4,
+						ClaimSize:         driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO2),
+						VolumeBindingMode: &volumeBindingMode,
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
 							MountPathGenerate: "/mnt/test-",
 						},
 					},
 					{
-						VolumeType:   awscloud.VolumeTypeGP2,
-						FSType:       ebscsidriver.FSTypeExt4,
-						MountOptions: []string{"rw"},
-						ClaimSize:    driver.MinimumSizeForVolumeType(awscloud.VolumeTypeGP2),
-						VolumeMode:   testsuites.Block,
+						VolumeType:        awscloud.VolumeTypeGP2,
+						FSType:            ebscsidriver.FSTypeExt4,
+						MountOptions:      []string{"rw"},
+						ClaimSize:         driver.MinimumSizeForVolumeType(awscloud.VolumeTypeGP2),
+						VolumeBindingMode: &volumeBindingMode,
+						VolumeMode:        testsuites.Block,
 						VolumeDevice: testsuites.VolumeDeviceDetails{
 							NameGenerate: "test-block-volume-",
 							DevicePath:   "/dev/xvda",
@@ -288,9 +296,9 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				Cmd: "while true; do echo $(date -u) >> /mnt/test-1/data; sleep 1; done",
 				Volumes: []testsuites.VolumeDetails{
 					{
-						VolumeType: awscloud.VolumeTypeIO1,
+						VolumeType: awscloud.VolumeTypeIO2,
 						FSType:     ebscsidriver.FSTypeExt4,
-						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO1),
+						ClaimSize:  driver.MinimumSizeForVolumeType(awscloud.VolumeTypeIO2),
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
 							MountPathGenerate: "/mnt/test-",
@@ -366,7 +374,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
 		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))]
 		region := availabilityZone[0 : len(availabilityZone)-1]
-		cloud, err := awscloud.NewCloud(region, false)
+		cloud, err := awscloud.NewCloud(region, false, "")
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
@@ -432,6 +440,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs          clientset.Interface
@@ -443,7 +452,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 	BeforeEach(func() {
 		cs = f.ClientSet
 		var err error
-		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1)
+		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1beta1)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get rest clientset: %v", err))
 		}
@@ -492,6 +501,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 
 var _ = Describe("[ebs-csi-e2e] [multi-az] Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs        clientset.Interface

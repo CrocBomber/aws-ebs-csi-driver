@@ -24,3 +24,12 @@ Vagrantfile
 
 #MacOS system files
 *.DS_Store
+
+# Vendor dir
+vendor/
+
+# .image-* files used by Makefile
+.image-*
+
+# VSCode
+.vscode/

@@ -20,22 +20,24 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"time"
 
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	ebscsidriver "github.com/c2devel/aws-ebs-csi-driver/pkg/driver"
 	k8srestclient "k8s.io/client-go/rest"
 
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/testsuites"
-	. "github.com/onsi/ginkgo"
+	awscloud "github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/testsuites"
+	. "github.com/onsi/ginkgo/v2"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	admissionapi "k8s.io/pod-security-admission/api"
 )
 
 const (
-	defaultDiskSize   = 4
-	defaultVoluemType = awscloud.VolumeTypeGP3
+	defaultDiskSize   = 8
+	defaultVoluemType = awscloud.VolumeTypeGP2
 
 	awsAvailabilityZonesEnv = "AWS_AVAILABILITY_ZONES"
 
@@ -50,6 +52,7 @@ var (
 // Requires env AWS_AVAILABILITY_ZONES a comma separated list of AZs to be set
 var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs           clientset.Interface
@@ -85,17 +88,18 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Tags:             map[string]string{awscloud.VolumeNameTagKey: dummyVolumeName, awscloud.AwsEbsDriverTagKey: "true"},
 		}
 		var err error
-		cloud, err = awscloud.NewCloud(region, false)
+		cloud, err = awscloud.NewCloud(region, false, "")
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
-		disk, err := cloud.CreateDisk(context.Background(), "", diskOptions)
+		r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
+		disk, err := cloud.CreateDisk(context.Background(), fmt.Sprintf("pvc-%d", r1.Uint64()), diskOptions)
 		if err != nil {
 			Fail(fmt.Sprintf("could not provision a volume: %v", err))
 		}
 		volumeID = disk.VolumeID
 		diskSize = fmt.Sprintf("%dGi", defaultDiskSize)
-		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1)
+		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1beta1)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get rest clientset: %v", err))
 		}

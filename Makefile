@@ -12,53 +12,129 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PKG=github.com/kubernetes-sigs/aws-ebs-csi-driver
-IMAGE?=amazon/aws-ebs-csi-driver
-VERSION=v1.1.1
-VERSION_AMAZONLINUX=$(VERSION)-amazonlinux
+VERSION?=v1.19.0-CROC1
+
+PKG=github.com/c2devel/aws-ebs-csi-driver
 GIT_COMMIT?=$(shell git rev-parse HEAD)
-BUILD_DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+BUILD_DATE?=$(shell date -u -Iseconds)
+
 LDFLAGS?="-X ${PKG}/pkg/driver.driverVersion=${VERSION} -X ${PKG}/pkg/cloud.driverVersion=${VERSION} -X ${PKG}/pkg/driver.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/driver.buildDate=${BUILD_DATE} -s -w"
+
 GO111MODULE=on
-GOPROXY=direct
 GOPATH=$(shell go env GOPATH)
 GOOS=$(shell go env GOOS)
 GOBIN=$(shell pwd)/bin
 
+REGISTRY?=registry.cloud.croc.ru/kaas
+IMAGE?=$(REGISTRY)/aws-ebs-csi-driver
+TAG?=$(GIT_COMMIT)
+
+OUTPUT_TYPE?=docker
+
+OS?=linux
+ARCH?=amd64
+OSVERSION?=amazon
+
+ALL_OS?=linux windows
+ALL_ARCH_linux?=amd64 arm64
+ALL_OSVERSION_linux?=amazon
+ALL_OS_ARCH_OSVERSION_linux=$(foreach arch, $(ALL_ARCH_linux), $(foreach osversion, ${ALL_OSVERSION_linux}, linux-$(arch)-${osversion}))
+
+ALL_ARCH_windows?=amd64
+ALL_OSVERSION_windows?=ltsc2019 ltsc2022
+ALL_OS_ARCH_OSVERSION_windows=$(foreach arch, $(ALL_ARCH_windows), $(foreach osversion, ${ALL_OSVERSION_windows}, windows-$(arch)-${osversion}))
+
+ALL_OS_ARCH_OSVERSION=$(foreach os, $(ALL_OS), ${ALL_OS_ARCH_OSVERSION_${os}})
+
+# split words on hyphen, access by 1-index
+word-hyphen = $(word $2,$(subst -, ,$1))
+
 .EXPORT_ALL_VARIABLES:
 
-.PHONY: bin/aws-ebs-csi-driver
+.PHONY: linux/$(ARCH) bin/aws-ebs-csi-driver
+linux/$(ARCH): bin/aws-ebs-csi-driver
 bin/aws-ebs-csi-driver: | bin
-	CGO_ENABLED=0 GOOS=linux go build -mod=vendor -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver ./cmd/
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -mod=mod -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver ./cmd/
 
-.PHONY: bin/aws-ebs-csi-driver.exe
+.PHONY: windows/$(ARCH) bin/aws-ebs-csi-driver.exe
+windows/$(ARCH): bin/aws-ebs-csi-driver.exe
 bin/aws-ebs-csi-driver.exe: | bin
-	CGO_ENABLED=0 GOOS=windows go build -mod=vendor -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver.exe ./cmd/
+	CGO_ENABLED=0 GOOS=windows GOARCH=$(ARCH) go build -mod=mod -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver.exe ./cmd/
+
+# Builds all linux images (not windows because it can't be exported with OUTPUT_TYPE=docker)
+.PHONY: all
+all: all-image-docker
+
+# Builds all linux and windows images and pushes them
+.PHONY: all-push
+all-push: all-image-registry push-manifest
+
+.PHONY: push-manifest
+push-manifest: create-manifest
+	docker manifest push --purge $(IMAGE):$(TAG)
+
+.PHONY: create-manifest
+create-manifest: all-image-registry
+# sed expression:
+# LHS: match 0 or more not space characters
+# RHS: replace with $(IMAGE):$(TAG)-& where & is what was matched on LHS
+	docker manifest create --amend $(IMAGE):$(TAG) $(shell echo $(ALL_OS_ARCH_OSVERSION) | sed -e "s~[^ ]*~$(IMAGE):$(TAG)\-&~g")
+
+# Only linux for OUTPUT_TYPE=docker because windows image cannot be exported
+# "Currently, multi-platform images cannot be exported with the docker export type. The most common usecase for multi-platform images is to directly push to a registry (see registry)."
+# https://docs.docker.com/engine/reference/commandline/buildx_build/#output
+.PHONY: all-image-docker
+all-image-docker: $(addprefix sub-image-docker-,$(ALL_OS_ARCH_OSVERSION_linux))
+.PHONY: all-image-registry
+all-image-registry: $(addprefix sub-image-registry-,$(ALL_OS_ARCH_OSVERSION))
+
+sub-image-%:
+	$(MAKE) OUTPUT_TYPE=$(call word-hyphen,$*,1) OS=$(call word-hyphen,$*,2) ARCH=$(call word-hyphen,$*,3) OSVERSION=$(call word-hyphen,$*,4) image
+
+.PHONY: image
+image: .image-$(TAG)-$(OS)-$(ARCH)-$(OSVERSION)
+.image-$(TAG)-$(OS)-$(ARCH)-$(OSVERSION):
+	docker buildx build \
+		--platform=$(OS)/$(ARCH) \
+		--progress=plain \
+		--target=$(OS)-$(OSVERSION) \
+		--output=type=$(OUTPUT_TYPE) \
+		-t=$(IMAGE):$(TAG)-$(OS)-$(ARCH)-$(OSVERSION) \
+		--build-arg=GOPROXY=$(GOPROXY) \
+		--build-arg=VERSION=$(VERSION) \
+		`./hack/provenance` \
+		.
+	touch $@
+
+.PHONY: clean
+clean:
+	rm -rf .*image-* bin/
 
 bin /tmp/helm /tmp/kubeval:
 	@mkdir -p $@
 
 bin/helm: | /tmp/helm bin
-	@curl -o /tmp/helm/helm.tar.gz -sSL https://get.helm.sh/helm-v3.5.3-${GOOS}-amd64.tar.gz
+	@curl -o /tmp/helm/helm.tar.gz -sSL https://get.helm.sh/helm-v3.11.2-${GOOS}-amd64.tar.gz
 	@tar -zxf /tmp/helm/helm.tar.gz -C bin --strip-components=1
 	@rm -rf /tmp/helm/*
 
 bin/kubeval: | /tmp/kubeval bin
-	@curl -o /tmp/kubeval/kubeval.tar.gz -sSL https://github.com/instrumenta/kubeval/releases/download/0.15.0/kubeval-linux-amd64.tar.gz
+	@curl -o /tmp/kubeval/kubeval.tar.gz -sSL https://github.com/instrumenta/kubeval/releases/download/0.16.1/kubeval-linux-amd64.tar.gz
 	@tar -zxf /tmp/kubeval/kubeval.tar.gz -C bin kubeval
 	@rm -rf /tmp/kubeval/*
 
 bin/mockgen: | bin
-	go get github.com/golang/mock/mockgen@v1.5.0
+	go install github.com/golang/mock/mockgen@v1.6.0
 
 bin/golangci-lint: | bin
 	echo "Installing golangci-lint..."
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.21.0
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.51.2
 
 .PHONY: kubeval
 kubeval: bin/kubeval
 	bin/kubeval -d deploy/kubernetes/base,deploy/kubernetes/cluster,deploy/kubernetes/overlays -i kustomization.yaml,crd_.+\.yaml,controller_add
 
+.PHONY: mockgen
 mockgen: bin/mockgen
 	./hack/update-gomock
 
@@ -98,17 +174,6 @@ test-e2e-multi-az:
 	GINKGO_FOCUS="\[ebs-csi-e2e\] \[multi-az\]" \
 	./hack/e2e/run.sh
 
-.PHONY: test-e2e-migration
-test-e2e-migration:
-	AWS_REGION=us-west-2 \
-	AWS_AVAILABILITY_ZONES=us-west-2a,us-west-2b,us-west-2c \
-	HELM_EXTRA_FLAGS='--set=controller.k8sTagClusterId=$$CLUSTER_NAME' \
-	EBS_INSTALL_SNAPSHOT="true" \
-	TEST_PATH=./tests/e2e-kubernetes/... \
-	GINKGO_FOCUS="\[ebs-csi-migration\]" \
-	EBS_CHECK_MIGRATION=true \
-	./hack/e2e/run.sh
-
 .PHONY: test-e2e-external
 test-e2e-external:
 	AWS_REGION=us-west-2 \
@@ -123,7 +188,6 @@ test-e2e-external:
 .PHONY: test-e2e-external-eks
 test-e2e-external-eks:
 	CLUSTER_TYPE=eksctl \
-	K8S_VERSION="1.20" \
 	HELM_VALUES_FILE="./hack/values_eksctl.yaml" \
 	HELM_EXTRA_FLAGS='--set=controller.k8sTagClusterId=$$CLUSTER_NAME' \
 	EBS_INSTALL_SNAPSHOT="true" \
@@ -135,6 +199,30 @@ test-e2e-external-eks:
 	GINKGO_SKIP="\[Disruptive\]|\[Serial\]" \
 	./hack/e2e/run.sh
 
+.PHONY: test-e2e-external-eks-windows
+test-e2e-external-eks-windows:
+	CLUSTER_TYPE=eksctl \
+	WINDOWS=true \
+	HELM_VALUES_FILE="./hack/values_eksctl.yaml" \
+	HELM_EXTRA_FLAGS='--set=controller.k8sTagClusterId=$$CLUSTER_NAME' \
+	EKSCTL_ADMIN_ROLE="Infra-prod-KopsDeleteAllLambdaServiceRoleF1578477-1ELDFIB4KCMXV" \
+	AWS_REGION=us-west-2 \
+	AWS_AVAILABILITY_ZONES=us-west-2a,us-west-2b \
+	TEST_PATH=./tests/e2e-kubernetes/... \
+	GINKGO_FOCUS="External.Storage" \
+	GINKGO_SKIP="\[Disruptive\]|\[Serial\]|\[LinuxOnly\]|\[Feature:VolumeSnapshotDataSource\]|\(xfs\)|\(ext4\)|\(block volmode\)" \
+	GINKGO_PARALLEL=15 \
+	NODE_OS_DISTRO="windows" \
+	./hack/e2e/run.sh
+
+.PHONY: test-helm-chart
+test-helm-chart:
+	AWS_REGION=us-west-2 \
+	AWS_AVAILABILITY_ZONES=us-west-2a,us-west-2b,us-west-2c \
+	EBS_INSTALL_SNAPSHOT="true" \
+	HELM_CT_TEST="true" \
+	./hack/e2e/run.sh
+
 .PHONY: verify-vendor
 test: verify-vendor
 verify: verify-vendor
@@ -142,6 +230,11 @@ verify-vendor:
 	@ echo; echo "### $@:"
 	@ ./hack/verify-vendor.sh
 
+.PHONY: verify-kustomize
+verify: verify-kustomize
+verify-kustomize:
+	@ echo; echo "### $@:"
+	@ ./hack/verify-kustomize
 
 .PHONY: generate-kustomize
 generate-kustomize: bin/helm
@@ -155,9 +248,9 @@ generate-kustomize: bin/helm
 	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/clusterrolebinding-provisioner.yaml > ../../deploy/kubernetes/base/clusterrolebinding-provisioner.yaml
 	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/clusterrolebinding-resizer.yaml > ../../deploy/kubernetes/base/clusterrolebinding-resizer.yaml
 	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/clusterrolebinding-snapshotter.yaml > ../../deploy/kubernetes/base/clusterrolebinding-snapshotter.yaml
-	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/controller.yaml --api-versions 'snapshot.storage.k8s.io/v1' > ../../deploy/kubernetes/base/controller.yaml
+	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/controller.yaml --api-versions 'snapshot.storage.k8s.io/v1' --set 'controller.userAgentExtra=kustomize' | sed -e "/namespace: /d" > ../../deploy/kubernetes/base/controller.yaml
 	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/csidriver.yaml > ../../deploy/kubernetes/base/csidriver.yaml
-	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/node.yaml  > ../../deploy/kubernetes/base/node.yaml
-	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/poddisruptionbudget-controller.yaml > ../../deploy/kubernetes/base/poddisruptionbudget-controller.yaml
-	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/serviceaccount-csi-controller.yaml > ../../deploy/kubernetes/base/serviceaccount-csi-controller.yaml
-	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/serviceaccount-csi-node.yaml > ../../deploy/kubernetes/base/serviceaccount-csi-node.yaml
+	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/node.yaml | sed -e "/namespace: /d" > ../../deploy/kubernetes/base/node.yaml
+	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/poddisruptionbudget-controller.yaml --api-versions 'policy/v1/PodDisruptionBudget' | sed -e "/namespace: /d" > ../../deploy/kubernetes/base/poddisruptionbudget-controller.yaml
+	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/serviceaccount-csi-controller.yaml | sed -e "/namespace: /d" > ../../deploy/kubernetes/base/serviceaccount-csi-controller.yaml
+	cd charts/aws-ebs-csi-driver && ../../bin/helm template kustomize . -s templates/serviceaccount-csi-node.yaml | sed -e "/namespace: /d" > ../../deploy/kubernetes/base/serviceaccount-csi-node.yaml

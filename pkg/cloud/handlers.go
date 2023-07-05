@@ -21,7 +21,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/request"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // RecordRequestsComplete is added to the Complete chain; called after any request
@@ -33,8 +33,7 @@ func RecordRequestsHandler(r *request.Request) {
 func RecordThrottledRequestsHandler(r *request.Request) {
 	if r.IsErrorThrottle() {
 		recordAWSThrottlesMetric(operationName(r))
-		klog.Warningf("Got RequestLimitExceeded error on AWS request (%s)",
-			describeRequest(r))
+		klog.InfoS("Got RequestLimitExceeded error on AWS request", "request", describeRequest(r))
 	}
 }
 
