@@ -44,7 +44,7 @@ spec:
         runAsUser: 0
       containers:
         - name: ebs-plugin
-          image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.19.0-CROC1
+          image: registry.cloud.croc.ru/vladkuznetsov/aws-ebs-csi-driver:v1.19.0-CROC1
           imagePullPolicy: IfNotPresent
           args:
             - node
@@ -91,7 +91,7 @@ spec:
             privileged: true
             readOnlyRootFilesystem: true
         - name: node-driver-registrar
-          image: registry.cloud.croc.ru/kaas/node-driver-registrar:v2.8.0-eks-1-27-3
+          image: registry.cloud.croc.ru/vladkuznetsov/node-driver-registrar:v2.8.0-eks-1-27-3
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -129,7 +129,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
         - name: liveness-probe
-          image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
+          image: registry.cloud.croc.ru/vladkuznetsov/livenessprobe:v2.10.0-eks-1-27-3
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock

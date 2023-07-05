@@ -3,17 +3,17 @@ kind: Kustomization
 resources:
   - ../ecr-public
 images:
-  - name: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver
+  - name: registry.cloud.croc.ru/vladkuznetsov/aws-ebs-csi-driver
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver
-  - name: registry.cloud.croc.ru/kaas/external-provisioner
+  - name: registry.cloud.croc.ru/vladkuznetsov/external-provisioner
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-provisioner
-  - name: registry.cloud.croc.ru/kaas/external-attacher
+  - name: registry.cloud.croc.ru/vladkuznetsov/external-attacher
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-attacher
-  - name: registry.cloud.croc.ru/kaas/livenessprobe
+  - name: registry.cloud.croc.ru/vladkuznetsov/livenessprobe
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/livenessprobe
-  - name: registry.cloud.croc.ru/kaas/csi-snapshotter
+  - name: registry.cloud.croc.ru/vladkuznetsov/csi-snapshotter
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-snapshotter
-  - name: registry.cloud.croc.ru/kaas/external-resizer
+  - name: registry.cloud.croc.ru/vladkuznetsov/external-resizer
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-resizer
-  - name: registry.cloud.croc.ru/kaas/node-driver-registrar
+  - name: registry.cloud.croc.ru/vladkuznetsov/node-driver-registrar
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-node-driver-registrar
