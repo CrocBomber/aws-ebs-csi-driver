@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION?=v1.20.0
+VERSION?=v1.20.0-CROC1
 
-PKG=github.com/kubernetes-sigs/aws-ebs-csi-driver
+PKG=github.com/c2devel/aws-ebs-csi-driver
 GIT_COMMIT?=$(shell git rev-parse HEAD)
 BUILD_DATE?=$(shell date -u -Iseconds)
 
@@ -25,7 +25,7 @@ GOPATH=$(shell go env GOPATH)
 GOOS=$(shell go env GOOS)
 GOBIN=$(shell pwd)/bin
 
-REGISTRY?=gcr.io/k8s-staging-provider-aws
+REGISTRY?=registry.cloud.croc.ru/kaas
 IMAGE?=$(REGISTRY)/aws-ebs-csi-driver
 TAG?=$(GIT_COMMIT)
 

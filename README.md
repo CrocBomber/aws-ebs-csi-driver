@@ -1,6 +1,14 @@
 # Amazon Elastic Block Store (EBS) CSI driver
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/kubernetes-sigs/aws-ebs-csi-driver)](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/aws-ebs-csi-driver)](https://goreportcard.com/report/github.com/kubernetes-sigs/aws-ebs-csi-driver)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/c2devel/aws-ebs-csi-driver)](https://github.com/c2devel/aws-ebs-csi-driver/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/c2devel/aws-ebs-csi-driver)](https://goreportcard.com/report/github.com/c2devel/aws-ebs-csi-driver)
+
+## Скорректированный релиз процесс
+
+см. [release process](docs/release.md)
+
+## Инструкция по отладке
+
+см. [debuging](docs/debuging.md)
 
 ## Overview
 

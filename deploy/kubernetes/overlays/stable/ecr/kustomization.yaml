@@ -3,17 +3,17 @@ kind: Kustomization
 resources:
   - ../ecr-public
 images:
-  - name: public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver
+  - name: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-ebs-csi-driver
-  - name: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner
+  - name: registry.cloud.croc.ru/kaas/external-provisioner
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-provisioner
-  - name: public.ecr.aws/eks-distro/kubernetes-csi/external-attacher
+  - name: registry.cloud.croc.ru/kaas/external-attacher
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-attacher
-  - name: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe
+  - name: registry.cloud.croc.ru/kaas/livenessprobe
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/livenessprobe
-  - name: public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter
+  - name: registry.cloud.croc.ru/kaas/csi-snapshotter
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-snapshotter
-  - name: public.ecr.aws/eks-distro/kubernetes-csi/external-resizer
+  - name: registry.cloud.croc.ru/kaas/external-resizer
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-resizer
-  - name: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar
+  - name: registry.cloud.croc.ru/kaas/node-driver-registrar
     newName: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/csi-node-driver-registrar
