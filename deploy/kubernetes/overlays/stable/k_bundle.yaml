@@ -1,4 +1,5 @@
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   labels:
@@ -7,12 +8,31 @@ metadata:
   namespace: kube-system
 ---
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
   name: ebs-csi-node-sa
   namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ebs-csi-leases-role
+  namespace: kube-system
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+  - update
+  - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -154,17 +174,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - watch
-  - list
-  - delete
-  - update
-  - create
-- apiGroups:
   - storage.k8s.io
   resources:
   - volumeattachments
@@ -275,6 +284,22 @@ rules:
   - volumesnapshotcontents/status
   verbs:
   - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: aws-ebs-csi-driver
+  name: ebs-csi-leases-rolebinding
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ebs-csi-leases-role
+subjects:
+- kind: ServiceAccount
+  name: ebs-csi-controller-sa
+  namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -424,8 +449,7 @@ spec:
           value: https://api.cloud.croc.ru
         - name: AWS_REGION
           value: croc
-        envFrom: null
-        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.19.0-CROC1
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.20.0-CROC1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
@@ -470,7 +494,6 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/external-provisioner:v3.5.0-eks-1-27-3
         imagePullPolicy: IfNotPresent
         name: csi-provisioner
@@ -493,7 +516,6 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/external-attacher:v4.3.0-eks-1-27-3
         imagePullPolicy: IfNotPresent
         name: csi-attacher
@@ -516,7 +538,6 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/csi-snapshotter:v6.2.1-eks-1-27-3
         imagePullPolicy: IfNotPresent
         name: csi-snapshotter
@@ -536,10 +557,10 @@ spec:
         - --csi-address=$(ADDRESS)
         - --v=2
         - --handle-volume-inuse-error=false
+        - --leader-election=true
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/external-resizer:v1.8.0-eks-1-27-3
         imagePullPolicy: IfNotPresent
         name: csi-resizer
@@ -557,7 +578,6 @@ spec:
           name: socket-dir
       - args:
         - --csi-address=/csi/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
         imagePullPolicy: IfNotPresent
         name: liveness-probe
@@ -650,8 +670,7 @@ spec:
               fieldPath: spec.nodeName
         - name: AWS_REGION
           value: croc
-        envFrom: null
-        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.19.0-CROC1
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.20.0-CROC1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
@@ -692,7 +711,6 @@ spec:
           value: /csi/csi.sock
         - name: DRIVER_REG_SOCK_PATH
           value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/node-driver-registrar:v2.8.0-eks-1-27-3
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -723,7 +741,6 @@ spec:
           name: probe-dir
       - args:
         - --csi-address=/csi/csi.sock
-        envFrom: null
         image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
         imagePullPolicy: IfNotPresent
         name: liveness-probe

@@ -21,7 +21,7 @@ package devicemanager
 // /dev/xvda is broken on Windows (despite the API allowing it)
 // /dev/xvddx is the last allowed device name in the /dev/xvd{a-z}{a-z} series
 // /dev/xvdc{a-z} don't work on some Windows instance types
-var deviceNames = []string{
+var deviceNames = []string{ //nolint:unused
 	"/dev/xvdb",
 	"/dev/xvdc",
 	"/dev/xvdd",
