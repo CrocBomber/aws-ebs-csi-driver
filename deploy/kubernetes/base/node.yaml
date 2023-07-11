@@ -44,7 +44,7 @@ spec:
         runAsUser: 0
       containers:
         - name: ebs-plugin
-          image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.19.0-CROC1
+          image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.20.0-CROC1
           imagePullPolicy: IfNotPresent
           args:
             - node
@@ -60,7 +60,6 @@ spec:
                   fieldPath: spec.nodeName
             - name: AWS_REGION
               value: croc
-          envFrom:
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
