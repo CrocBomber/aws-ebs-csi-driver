@@ -449,7 +449,7 @@ spec:
           value: https://api.cloud.croc.ru
         - name: AWS_REGION
           value: croc
-        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.20.0-CROC1
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.21.0-CROC1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
@@ -494,7 +494,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/external-provisioner:v3.5.0-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/external-provisioner:v3.5.0-eks-1-27-7
         imagePullPolicy: IfNotPresent
         name: csi-provisioner
         resources:
@@ -516,7 +516,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/external-attacher:v4.3.0-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/external-attacher:v4.3.0-eks-1-27-7
         imagePullPolicy: IfNotPresent
         name: csi-attacher
         resources:
@@ -538,7 +538,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/csi-snapshotter:v6.2.1-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/csi-snapshotter:v6.2.2-eks-1-27-7
         imagePullPolicy: IfNotPresent
         name: csi-snapshotter
         resources:
@@ -561,7 +561,7 @@ spec:
         env:
         - name: ADDRESS
           value: /var/lib/csi/sockets/pluginproxy/csi.sock
-        image: registry.cloud.croc.ru/kaas/external-resizer:v1.8.0-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/external-resizer:v1.8.0-eks-1-27-7
         imagePullPolicy: IfNotPresent
         name: csi-resizer
         resources:
@@ -578,7 +578,7 @@ spec:
           name: socket-dir
       - args:
         - --csi-address=/csi/csi.sock
-        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-7
         imagePullPolicy: IfNotPresent
         name: liveness-probe
         resources:
@@ -670,7 +670,7 @@ spec:
               fieldPath: spec.nodeName
         - name: AWS_REGION
           value: croc
-        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.20.0-CROC1
+        image: registry.cloud.croc.ru/kaas/aws-ebs-csi-driver:v1.21.0-CROC1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 5
@@ -711,7 +711,7 @@ spec:
           value: /csi/csi.sock
         - name: DRIVER_REG_SOCK_PATH
           value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
-        image: registry.cloud.croc.ru/kaas/node-driver-registrar:v2.8.0-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/node-driver-registrar:v2.8.0-eks-1-27-7
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
@@ -741,7 +741,7 @@ spec:
           name: probe-dir
       - args:
         - --csi-address=/csi/csi.sock
-        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-3
+        image: registry.cloud.croc.ru/kaas/livenessprobe:v2.10.0-eks-1-27-7
         imagePullPolicy: IfNotPresent
         name: liveness-probe
         resources:
