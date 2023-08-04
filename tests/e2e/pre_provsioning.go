@@ -99,7 +99,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		}
 		volumeID = disk.VolumeID
 		diskSize = fmt.Sprintf("%dGi", defaultDiskSize)
-		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1beta1)
+		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get rest clientset: %v", err))
 		}
@@ -158,7 +158,8 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
 			Volumes: []testsuites.VolumeDetails{
 				{
-					ClaimSize: diskSize,
+					VolumeType: defaultVoluemType, // без этой строки ebs-plugin ругался: Unknown VolumeType
+					ClaimSize:  diskSize,
 					VolumeMount: testsuites.VolumeMountDetails{
 						NameGenerate:      "test-volume-",
 						MountPathGenerate: "/mnt/test-",

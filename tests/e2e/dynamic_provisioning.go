@@ -47,7 +47,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		ns          *v1.Namespace
 		ebsDriver   driver.PVTestDriver
 		volumeTypes = awscloud.ValidVolumeTypes
-		fsTypes     = []string{ebscsidriver.FSTypeXfs}
+		fsTypes     = []string{ebscsidriver.FSTypeExt4} // Поменял xfs на ext4 из-за https://jira.croc.ru/browse/C2DEVEL-13229?focusedCommentId=6268126
 	)
 
 	BeforeEach(func() {
@@ -452,7 +452,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 	BeforeEach(func() {
 		cs = f.ClientSet
 		var err error
-		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1beta1)
+		snapshotrcs, err = restClient(testsuites.SnapshotAPIGroup, testsuites.APIVersionv1)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get rest clientset: %v", err))
 		}
