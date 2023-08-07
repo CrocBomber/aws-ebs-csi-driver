@@ -47,7 +47,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		ns          *v1.Namespace
 		ebsDriver   driver.PVTestDriver
 		volumeTypes = awscloud.ValidVolumeTypes
-		fsTypes     = []string{ebscsidriver.FSTypeExt4} // Поменял xfs на ext4 из-за https://jira.croc.ru/browse/C2DEVEL-13229?focusedCommentId=6268126
+		fsTypes     = []string{ebscsidriver.FSTypeXfs}
 	)
 
 	BeforeEach(func() {
