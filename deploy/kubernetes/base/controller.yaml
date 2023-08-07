@@ -25,7 +25,6 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: linux
-        node-role.kubernetes.io/master: ""
       serviceAccountName: ebs-csi-controller-sa
       priorityClassName: system-cluster-critical
       affinity:
@@ -55,7 +54,6 @@ spec:
         - effect: NoExecute
           operator: Exists
           tolerationSeconds: 300
-        - operator: Exists
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000

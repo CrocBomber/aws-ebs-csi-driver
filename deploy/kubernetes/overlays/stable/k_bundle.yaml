@@ -595,7 +595,6 @@ spec:
           name: socket-dir
       nodeSelector:
         kubernetes.io/os: linux
-        node-role.kubernetes.io/master: ""
       priorityClassName: system-cluster-critical
       securityContext:
         fsGroup: 1000
@@ -609,7 +608,6 @@ spec:
       - effect: NoExecute
         operator: Exists
         tolerationSeconds: 300
-      - operator: Exists
       volumes:
       - emptyDir: {}
         name: socket-dir
