@@ -46,7 +46,7 @@ Docker version 19.03.12, build 48a66213fe
 ```
 kubectl kustomize ./deploy/kubernetes/overlays/stable/ > ./deploy/kubernetes/overlays/stable/k_bundle.yaml
 ```
-- собранный бандл файл k_bundle.yaml надо скопировать в репозиторий kaas-resource-initializer в файлы ebs/ebs.yaml каждой версии kubenetes
+- собранный бандл файл k_bundle.yaml надо скопировать в репозиторий kaas-resource-initializer в каталог ebs/ каждой версии kubenetes
 
 Для создания докер имаджа необходимы установленный и настроенный докер демон - https://docs.docker.com/get-docker/ . Для сборки имаджа необходимо:
 - находясь в руте репы выполнить:

@@ -14,15 +14,15 @@ tail -f -n 20 $(find /var/log/pods/kube-system_ebs-csi-controller-* -type l | xa
 2. Скопировать из неймспейса kaas в свой неймспейс все образы.
 
 3. Из файла charts/aws-ebs-csi-driver/values.yaml выписать все образы с версиями и скопировать их в свой неймспейс используя утилиту scopeo.
-Пример для версии v1.19:
+Пример для версии v1.21:
 ```sh
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.8.0-eks-1-27-3 docker://registry.cloud.croc.ru/awesomedev/node-driver-registrar:v2.8.0-eks-1-27-3
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.10.0-eks-1-27-3 docker://registry.cloud.croc.ru/awesomedev/livenessprobe:v2.10.0-eks-1-27-3
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.3.0-eks-1-27-3 docker://registry.cloud.croc.ru/awesomedev/external-attacher:v4.3.0-eks-1-27-3
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v3.5.0-eks-1-27-3 docker://registry.cloud.croc.ru/awesomedev/external-provisioner:v3.5.0-eks-1-27-3
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.8.0-eks-1-27-3 docker://registry.cloud.croc.ru/awesomedev/external-resizer:v1.8.0-eks-1-27-3
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v6.2.1-eks-1-27-3 docker://registry.cloud.croc.ru/awesomedev/csi-snapshotter:v6.2.1-eks-1-27-3
-skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/ebs-csi-driver/volume-modifier-for-k8s:v0.1.0 docker://registry.cloud.croc.ru/awesomedev/volume-modifier-for-k8s:v0.1.0
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.8.0-eks-1-27-7 docker://registry.cloud.croc.ru/awesomedev/node-driver-registrar:v2.8.0-eks-1-27-7
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.10.0-eks-1-27-7 docker://registry.cloud.croc.ru/awesomedev/livenessprobe:v2.10.0-eks-1-27-7
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-attacher:v4.3.0-eks-1-27-7 docker://registry.cloud.croc.ru/awesomedev/external-attacher:v4.3.0-eks-1-27-7
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v3.5.0-eks-1-27-7 docker://registry.cloud.croc.ru/awesomedev/external-provisioner:v3.5.0-eks-1-27-7
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-resizer:v1.8.0-eks-1-27-7 docker://registry.cloud.croc.ru/awesomedev/external-resizer:v1.8.0-eks-1-27-7
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/eks-distro/kubernetes-csi/external-snapshotter/csi-snapshotter:v6.2.2-eks-1-27-7 docker://registry.cloud.croc.ru/awesomedev/csi-snapshotter:v6.2.2-eks-1-27-7
+skopeo copy --dcreds 'awesomedev:secretpassword' docker://public.ecr.aws/ebs-csi-driver/volume-modifier-for-k8s:v0.1.1 docker://registry.cloud.croc.ru/awesomedev/volume-modifier-for-k8s:v0.1.1
 ```
 
 4. В файлах Makefile, charts/aws-ebs-csi-driver/values.yaml, deploy/kubernetes/overlays/stable/ecr/kustomization.yaml и deploy/kubernetes/overlays/stable/gcr/kustomization.yaml везде заменить неймспейс kaas на свой (в примере на awesomedev).
@@ -53,21 +53,25 @@ aws --no-verify-ssl  --profile default --endpoint-url https://storage.cloud.croc
 ```
 
 11. Находясь в каталоге с проектом aws-ebs-csi-driver собрать тестируемый образ, протегировать и залить в свой неймспейс реестра образов.
-Пример командя для версии v1.19.0-CROC1:
+Пример командя для версии v1.21.0-CROC1:
 ```sh
 docker login registry.cloud.croc.ru/awesomedev
 docker buildx build -t aws-ebs-csi-driver .
-docker tag aws-ebs-csi-driver registry.cloud.croc.ru/awesomedev/aws-ebs-csi-driver:v1.19.0-CROC1
-docker push registry.cloud.croc.ru/awesomedev/aws-ebs-csi-driver:v1.19.0-CROC1
+docker tag aws-ebs-csi-driver registry.cloud.croc.ru/awesomedev/aws-ebs-csi-driver:v1.21.0-CROC1
+docker push registry.cloud.croc.ru/awesomedev/aws-ebs-csi-driver:v1.21.0-CROC1
 ```
 
 12. В конфиге тестового стенда облака /etc/c2.deployment.conf, прописать свои регистри и s3 бакет.
 - в секции KUBERNETES поменять docker_registry_namespace с kaas на awesomedev
-- в секции KUBERNETES поменять bucket_address с kaas на awesomekaas
+- в секции KUBERNETES поменять bucket_address с kaas/17 на awesomekaas
 
 13. В MongoDB в коллекции kubernetes.versions поменять настройки на свои:
 ```js
-db["kubernetes.versions"].updateOne({"_id": "base"}, {"$set": {"bucket_address": "https://storage.cloud.croc.ru/awesomekaas", "docker_registry_namespace": "awesomedev"}})
+db["kubernetes.versions"].update({"_id": "base"}, {"$set": {"bucket_address": "https://storage.cloud.croc.ru/awesomekaas", "docker_registry_namespace": "awesomedev"}})
+```
+Восстановить как было:
+```js
+db["kubernetes.versions"].update({"_id": "base"}, {"$set": {"bucket_address": "https://storage.cloud.croc.ru/kaas/v17", "docker_registry_namespace": "kaas"}})
 ```
 
 14. Перезапустить сервисы стенда c2-deploy и все c2-ks-*

@@ -6,9 +6,13 @@
 
 см. [release process](docs/release.md)
 
+## Инструкция по запуску тестов
+
+см. [testing](docs/testing.md)
+
 ## Инструкция по отладке
 
-см. [debuging](docs/debuging.md)
+см. [debuging](docs/debugging.md)
 
 ## Overview
 
