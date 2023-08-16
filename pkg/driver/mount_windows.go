@@ -21,8 +21,8 @@ package driver
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/mounter"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/resizefs"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/mounter"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/resizefs"
 	mountutils "k8s.io/mount-utils"
 	"regexp"
 )

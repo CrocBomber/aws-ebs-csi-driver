@@ -21,7 +21,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/cloud"
 	"k8s.io/klog/v2"
 )
 

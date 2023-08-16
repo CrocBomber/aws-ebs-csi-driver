@@ -29,7 +29,7 @@ package devicemanager
 // conflict and prevent each other from mounting. Because non-nitro instances
 // are limited to 39 volumes, and are long-term deprecated in favor of nitro,
 // this should be long-term safe.
-var deviceNames = []string{
+var deviceNames = []string{ //nolint:unused
 	"/dev/xvdaa",
 	"/dev/xvdab",
 	"/dev/xvdac",

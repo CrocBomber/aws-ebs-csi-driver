@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/c2devel/aws-ebs-csi-driver/pkg/util"
+	"github.com/c2devel/aws-ebs-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,9 +48,11 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 	pvcName := tpvc.persistentVolumeClaim.Name
 	pvc, _ := client.CoreV1().PersistentVolumeClaims(namespace.Name).Get(context.TODO(), pvcName, metav1.GetOptions{})
 	By(fmt.Sprintf("Get pvc name: %v", pvc.Name))
+
 	originalSize := pvc.Spec.Resources.Requests["storage"]
+	sizeIncrementGiB := int64(8)
 	delta := resource.Quantity{}
-	delta.Set(util.GiBToBytes(1))
+	delta.Set(util.GiBToBytes(sizeIncrementGiB))
 	originalSize.Add(delta)
 	pvc.Spec.Resources.Requests["storage"] = originalSize
 
